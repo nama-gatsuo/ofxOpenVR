@@ -3,7 +3,7 @@ ofxOpenVR
 Implementation of Valve Software's [OpenVR](https://github.com/ValveSoftware/openvr) API.
 
 
-##Requirements
+## Requirements
 
 * Visual Studio 2015.
 
