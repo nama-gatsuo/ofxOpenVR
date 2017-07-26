@@ -7,9 +7,9 @@ This addon lets create VR applications (using HTC Vive) on openFrameworks, Windo
 
 ## Requirements
 
-* HTC Vive (to compile projects it is not required)
+* HTC Vive (though, it is not required to compile projects, just to deploy)
 
-* Visual Studio 2015.
+* Visual Studio 2015
 
 * openFrameworks with GLM (current last version 0.9.8 not work, so use Nightly Build). We use of_v20170714_vs_nightly.zip: https://cloud.mail.ru/public/4LrM/WwtFeF6DX
 
