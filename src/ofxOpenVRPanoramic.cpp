@@ -12,7 +12,7 @@ void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
 	openVR_ = &openVR;
 
 	image_.load(imageFileName);
-	sphere_.set(10, 10);
+	sphere_.set(20, 10);
 	sphere_.setPosition(glm::vec3(.0f, .0f, .0f));
 
 	//Shader setup

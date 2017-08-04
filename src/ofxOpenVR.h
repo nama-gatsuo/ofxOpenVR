@@ -84,6 +84,11 @@ public:
 
 	void drawDebugInfo(float x = 10.0f, float y = 20.0f);
 
+	//HMD
+	glm::mat4x4 getHDMPose();
+	ofPoint getHDMCenter(int controller);
+	ofPoint getHDMAxe(int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+	
 	glm::mat4x4 getHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
 	glm::mat4x4 getHMDMatrixPoseEye(vr::Hmd_Eye nEye);
 	glm::mat4x4 getCurrentViewProjectionMatrix(vr::Hmd_Eye nEye);
@@ -120,6 +125,10 @@ public:
 	vr::ETrackedControllerRole toControllerRole(int controller);	//0 - left, 1 - right
 	vr::Hmd_Eye toEye(int i);	//0 - left, 1 - right
 	int toDeviceId(int controller);
+
+	//---- Get center and axes from a matrix
+	ofPoint get_center(const glm::mat4x4 &pose);
+	ofPoint get_axe(const glm::mat4x4 &pose, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 
 protected:
 	vector<ofxOpenVRControllerEvent> controller_events_;

@@ -248,6 +248,7 @@ glm::mat4x4 ofxOpenVR::getCurrentViewMatrix(vr::Hmd_Eye nEye)
 	return matV;
 }
 
+
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getControllerPose(int controller)
 {
@@ -870,6 +871,11 @@ void ofxOpenVR::updateDevicesMatrixPose()
 					break;
 			}
 
+			// Store HMD matrix. 
+			if (_pHMD->GetTrackedDeviceClass(nDevice) == vr::TrackedDeviceClass_HMD) {
+
+			}
+
 			// Store controllers' ID and matrix. 
 			if (_pHMD->GetTrackedDeviceClass(nDevice) == vr::TrackedDeviceClass_Controller) {
 				_iTrackedControllerCount += 1;
@@ -1110,14 +1116,12 @@ void ofxOpenVR::renderStereoTargets()
 
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getControllerCenter(int controller) {
-	glm::mat4x4 pose = getControllerPose(controller);
+ofPoint ofxOpenVR::get_center(const glm::mat4x4 &pose) {
 	return ofPoint(pose * glm::vec4(0, 0, 0, 1));
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,OY,OZ, result is normalized
-	glm::mat4x4 pose = getControllerPose(controller);
+ofPoint ofxOpenVR::get_axe(const glm::mat4x4 &pose, int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
 	glm::vec4 center(0, 0, 0, 1);
 	glm::vec4 point = center;
 	point[axe] += 0.05f;
@@ -1125,6 +1129,31 @@ ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,
 	ofPoint v(point);
 	v.normalize();
 	return v;
+}
+
+//--------------------------------------------------------------
+glm::mat4x4 ofxOpenVR::getHDMPose() {
+	return _mat4HMDPose;
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getHDMCenter(int controller) {
+	return get_center(getHDMPose());
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getHDMAxe(int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
+	return get_axe(getHDMPose(), axe);
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getControllerCenter(int controller) {
+	return get_center(getControllerPose(controller));
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,OY,OZ, result is normalized
+	return get_axe(getControllerPose(controller), axe);
 }
 
 //--------------------------------------------------------------
