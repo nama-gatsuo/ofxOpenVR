@@ -94,8 +94,8 @@ public:
 	void hideGrid(float transitionDuration = 2.0f);
 
 	//---- Controllers
-	glm::mat4x4 getControllerPose(vr::ETrackedControllerRole nController);
-	bool isControllerConnected(vr::ETrackedControllerRole nController);
+	glm::mat4x4 getControllerPose(int controller);
+	bool isControllerConnected(int controller);
 
 	void setDrawControllers(bool bDrawControllers);
 

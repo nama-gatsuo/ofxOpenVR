@@ -232,8 +232,9 @@ glm::mat4x4 ofxOpenVR::getCurrentViewMatrix(vr::Hmd_Eye nEye)
 }
 
 //--------------------------------------------------------------
-glm::mat4x4 ofxOpenVR::getControllerPose(vr::ETrackedControllerRole nController)
+glm::mat4x4 ofxOpenVR::getControllerPose(int controller)
 {
+	vr::ETrackedControllerRole nController = toControllerRole(controller);
 	glm::mat4x4 matrix;
 
 	if (nController == vr::TrackedControllerRole_LeftHand) {
@@ -303,8 +304,9 @@ ofPoint ofxOpenVR::getTrackPadState(int controller) {
 //virtual void TriggerHapticPulse(vr::TrackedDeviceIndex_t unControllerDeviceIndex, uint32_t unAxisId, unsigned short usDurationMicroSec) = 0;
 
 //--------------------------------------------------------------
-bool ofxOpenVR::isControllerConnected(vr::ETrackedControllerRole nController)
+bool ofxOpenVR::isControllerConnected(int controller)
 {
+	vr::ETrackedControllerRole nController = toControllerRole(controller);
 	if (_pHMD) {
 		if (_iTrackedControllerCount > 0) {
 			if (nController == vr::TrackedControllerRole_LeftHand) {
