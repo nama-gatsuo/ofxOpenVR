@@ -4,6 +4,21 @@
 #include <openvr.h>
 #include "CGLRenderModel.h"
 
+/*
+ofxOpenVR addon, adopted by Kuflex, 2017
+- Enchanced controllers support
+	float t0 = openVR.getTriggerState(0);
+	float t1 = openVR.getTriggerState(1);
+	cout << "trigger " << t0 << " " << t1 << endl;
+
+	ofPoint p0 = openVR.getTrackPadState(0);
+	ofPoint p1 = openVR.getTrackPadState(1);
+	cout << "trackpad " << p0.x << ", " << p0.y << "   " << p1.x << ", " << p1.y << endl;
+
+- Added ofxOpenVRPanoramic module for 360 panorama environment rendering, see ofxOpenVRPanoramic.h for details
+
+*/
+
 //--------------------------------------------------------------
 //--------------------------------------------------------------
 enum class ControllerRole
@@ -55,6 +70,7 @@ public:
 	void update();
 	void render();
 	void renderDistortion();
+	void renderScene(vr::Hmd_Eye nEye);
 
 	void drawDebugInfo(float x = 10.0f, float y = 20.0f);
 
@@ -64,10 +80,6 @@ public:
 	glm::mat4x4 getCurrentProjectionMatrix(vr::Hmd_Eye nEye);
 	glm::mat4x4 getCurrentViewMatrix(vr::Hmd_Eye nEye);
 
-	glm::mat4x4 getControllerPose(vr::ETrackedControllerRole nController);
-	bool isControllerConnected(vr::ETrackedControllerRole nController);
-
-	void setDrawControllers(bool bDrawControllers);
 	void setClearColor(ofFloatColor color);
 
 	void showMirrorWindow();
@@ -81,9 +93,25 @@ public:
 	void showGrid(float transitionDuration = 2.0f);
 	void hideGrid(float transitionDuration = 2.0f);
 
-	ofEvent<ofxOpenVRControllerEventArgs> ofxOpenVRControllerEvent;
+	//---- Controllers
+	glm::mat4x4 getControllerPose(vr::ETrackedControllerRole nController);
+	bool isControllerConnected(vr::ETrackedControllerRole nController);
 
-private:
+	void setDrawControllers(bool bDrawControllers);
+
+	//Controllers events. Note: the queue of events is cleared at each update call.
+	bool hasControllerEvents();
+	bool getNextControllerMessage(ofxOpenVRControllerEventArgs &event);
+	float getTriggerState(int controller);	//0..1
+	ofPoint getTrackPadState(int controller); //[-1..1]x[-1..1]
+
+	int controllersCount() { return 2; }
+	vr::ETrackedControllerRole toControllerRole(int i);	//0 - left, 1 - right
+	vr::Hmd_Eye toEye(int i);	//0 - left, 1 - right
+
+protected:
+	vector<ofxOpenVRControllerEventArgs> controller_events_;
+
 
 	struct VertexDataScene
 	{
@@ -180,7 +208,6 @@ private:
 	void renderStereoTargets();
 	
 	void drawControllers();
-	void renderScene(vr::Hmd_Eye nEye);
 
 	glm::mat4x4 convertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose);
 

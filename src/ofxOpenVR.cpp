@@ -109,7 +109,7 @@ void ofxOpenVR::update()
 	// for now as fast as possible
 	if (_pHMD)
 	{
-		handleInput();
+		handleInput();	//update controller events queue
 		drawControllers();
 	}
 
@@ -245,6 +245,62 @@ glm::mat4x4 ofxOpenVR::getControllerPose(vr::ETrackedControllerRole nController)
 
 	return matrix;
 }
+
+//--------------------------------------------------------------
+vr::ETrackedControllerRole ofxOpenVR::toControllerRole(int i) {	//0 - left, 1 - right
+	if (i == 0) return vr::TrackedControllerRole_LeftHand;
+	if (i == 1) return vr::TrackedControllerRole_RightHand;
+	return vr::TrackedControllerRole_Invalid;
+}
+
+//--------------------------------------------------------------
+vr::Hmd_Eye ofxOpenVR::toEye(int i) {	//0 - left, 1 - right
+	if (i == 0) return vr::Eye_Left;
+	else return vr::Eye_Right;
+}
+
+//--------------------------------------------------------------
+float ofxOpenVR::getTriggerState(int controller) {
+	if (!_pHMD) return 0;
+	int id = (controller == 0) ? _leftControllerDeviceID : _rightControllerDeviceID;
+	if (_pHMD->IsTrackedDeviceConnected(id)) {
+		vr::VRControllerState_t state;
+		bool res = _pHMD->GetControllerState(id, &state, sizeof(state));
+		if (res) return state.rAxis[1].x;
+		/*cout << "controller " << controller + 1 << " id " << id << "  ";
+		if (!res) {
+			cout << "error" << endl;
+		}
+		else {
+			cout << "packet " << state.unPacketNum
+				<< ", press " << state.ulButtonPressed
+				<< ", touch " << state.ulButtonTouched;
+			cout << "  axis ";
+			for (int j = 0; j < vr::k_unControllerStateAxisCount; j++) {
+				cout << "(" << state.rAxis[j].x << ", " << state.rAxis[j].y << ")";
+			}
+			cout << endl;
+		}*/
+	}
+	return 0;
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getTrackPadState(int controller) {
+	if (!_pHMD) return ofPoint();
+	int id = (controller == 0) ? _leftControllerDeviceID : _rightControllerDeviceID;
+	if (_pHMD->IsTrackedDeviceConnected(id)) {
+		vr::VRControllerState_t state;
+		bool res = _pHMD->GetControllerState(id, &state, sizeof(state));
+		if (res) return ofPoint(state.rAxis[0].x, state.rAxis[0].y);
+	}
+	return ofPoint();
+}
+
+
+/** Trigger a single haptic pulse on a controller. After this call the application may not trigger another haptic pulse on this controller
+* and axis combination for 5ms. */
+//virtual void TriggerHapticPulse(vr::TrackedDeviceIndex_t unControllerDeviceIndex, uint32_t unAxisId, unsigned short usDurationMicroSec) = 0;
 
 //--------------------------------------------------------------
 bool ofxOpenVR::isControllerConnected(vr::ETrackedControllerRole nController)
@@ -822,6 +878,7 @@ void ofxOpenVR::updateDevicesMatrixPose()
 //--------------------------------------------------------------
 void ofxOpenVR::handleInput()
 {
+	controller_events_.clear();
 	// Process SteamVR events
 	vr::VREvent_t event;
 	while (_pHMD->PollNextEvent(&event, sizeof(event)))
@@ -830,12 +887,27 @@ void ofxOpenVR::handleInput()
 	}
 }
 
+//--------------------------------------------------------------
+bool ofxOpenVR::hasControllerEvents() {
+	return controller_events_.size() > 0;
+}
+
+//--------------------------------------------------------------
+bool ofxOpenVR::getNextControllerMessage(ofxOpenVRControllerEventArgs &event) {
+	if (hasControllerEvents()) {
+		event = controller_events_[0];
+		controller_events_.erase(controller_events_.begin());
+		return true;
+	}
+	return false;
+}
+
 
 //--------------------------------------------------------------
 // Purpose: Processes a single VR event
 //--------------------------------------------------------------
 void ofxOpenVR::processVREvent(const vr::VREvent_t & event)
-{	
+{		
 	// Check device's class.
 	switch (_pHMD->GetTrackedDeviceClass(event.trackedDeviceIndex))
 	{
@@ -923,7 +995,8 @@ void ofxOpenVR::processVREvent(const vr::VREvent_t & event)
 				break;
 			}
 
-			ofNotifyEvent(ofxOpenVRControllerEvent, _args);
+			controller_events_.push_back(_args);		//Send to queue
+			//ofNotifyEvent(ofxOpenVRControllerEvent, _args);
 			break;
 
 		case vr::TrackedDeviceClass_HMD:
@@ -1253,7 +1326,7 @@ void ofxOpenVR::setupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrac
 		
 	// try to find a model we've already set up
 	std::string sRenderModelName = getTrackedDeviceString(_pHMD, unTrackedDeviceIndex, vr::Prop_RenderModelName_String);
-	CGLRenderModel *pRenderModel = findOrLoadRenderModel(sRenderModelName.c_str());
+	CGLRenderModel *pRenderModel = findOrLoadRenderModel(sRenderModelName.c_str());	
 	if (!pRenderModel) {
 		std::string sTrackingSystemName = getTrackedDeviceString(_pHMD, unTrackedDeviceIndex, vr::Prop_TrackingSystemName_String);
 		printf("Unable to load render model for tracked device %d (%s.%s)", unTrackedDeviceIndex, sTrackingSystemName.c_str(), sRenderModelName.c_str());
