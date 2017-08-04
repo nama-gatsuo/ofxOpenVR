@@ -10,8 +10,6 @@ void ofApp::setup(){
 	_openVR.setup(std::bind(&ofApp::render, this, std::placeholders::_1));
 	_openVR.setDrawControllers(true);
 
-	ofAddListener(_openVR.ofxOpenVRControllerEvent, this, &ofApp::controllerEvent);
-
 	_texture.load("of.png");
 	_texture.getTexture().setTextureWrap(GL_REPEAT, GL_REPEAT);
 	
@@ -107,14 +105,17 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::exit() {
-	ofRemoveListener(_openVR.ofxOpenVRControllerEvent, this, &ofApp::controllerEvent);
-
 	_openVR.exit();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	_openVR.update();
+	while (_openVR.hasControllerEvents()) {
+		ofxOpenVRControllerEvent event;
+		_openVR.getNextControllerEvent(event);
+		controllerEvent(event);
+	}
 }
 
 //--------------------------------------------------------------
@@ -161,7 +162,7 @@ void  ofApp::render(vr::Hmd_Eye nEye)
 }
 
 //--------------------------------------------------------------
-void ofApp::controllerEvent(ofxOpenVRControllerEventArgs& args)
+void ofApp::controllerEvent(ofxOpenVRControllerEvent& args)
 {
 	cout << "ofApp::controllerEvent > role: " << (int)args.controllerRole << " - event type: " << (int)args.eventType << " - button type: " << (int)args.buttonType << " - x: " << args.analogInput_xAxis << " - y: " << args.analogInput_yAxis << endl;
 }

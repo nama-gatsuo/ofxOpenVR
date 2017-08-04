@@ -68,6 +68,10 @@ public:
 	void exit();
 
 	void update();
+
+	void setRenderModelForTrackedDevices(bool bRender);
+	bool getRenderModelForTrackedDevices();
+
 	void render();
 	void renderDistortion();
 	void renderScene(vr::Hmd_Eye nEye);
@@ -86,28 +90,30 @@ public:
 	void hideMirrorWindow();
 	void toggleMirrorWindow();
 
-	void setRenderModelForTrackedDevices(bool bRender);
-	bool getRenderModelForTrackedDevices();
 
 	void toggleGrid(float transitionDuration = 2.0f);
 	void showGrid(float transitionDuration = 2.0f);
 	void hideGrid(float transitionDuration = 2.0f);
 
 	//---- Controllers
-	glm::mat4x4 getControllerPose(int controller);
+	int controllersCount() { return 2; }
 	bool isControllerConnected(int controller);
-
 	void setDrawControllers(bool bDrawControllers);
 
-	//Controllers events. Note: the queue of events is cleared at each update call.
-	bool hasControllerEvents();
-	bool getNextControllerMessage(ofxOpenVRControllerEvent &event);
+	glm::mat4x4 getControllerPose(int controller);	//controller 0 - left, 1 - right
+	ofPoint getControllerCenter(int controller);
+	ofPoint getControllerAxe(int controller, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 	float getTriggerState(int controller);	//0..1
 	ofPoint getTrackPadState(int controller); //[-1..1]x[-1..1]
 
-	int controllersCount() { return 2; }
-	vr::ETrackedControllerRole toControllerRole(int i);	//0 - left, 1 - right
+	//Controllers events. Note: the queue of events is cleared at each update call.
+	bool hasControllerEvents();
+	bool getNextControllerEvent(ofxOpenVRControllerEvent &event);
+
+	//---- Convert i to left/right type
+	vr::ETrackedControllerRole toControllerRole(int controller);	//0 - left, 1 - right
 	vr::Hmd_Eye toEye(int i);	//0 - left, 1 - right
+	int toDeviceId(int controller);
 
 protected:
 	vector<ofxOpenVRControllerEvent> controller_events_;

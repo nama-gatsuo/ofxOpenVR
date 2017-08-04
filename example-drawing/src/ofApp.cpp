@@ -19,8 +19,6 @@ void ofApp::setup(){
 	openVR.setup(std::bind(&ofApp::render, this, std::placeholders::_1));
 	openVR.setDrawControllers(true);
 
-	ofAddListener(openVR.ofxOpenVRControllerEvent, this, &ofApp::controllerEvent);
-
 	// Vertex shader source
 	string vertex;
 
@@ -53,19 +51,22 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::exit(){
-	ofRemoveListener(openVR.ofxOpenVRControllerEvent, this, &ofApp::controllerEvent);
-
 	openVR.exit();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	openVR.update();
+	while (openVR.hasControllerEvents()) {
+		ofxOpenVRControllerEvent event;
+		openVR.getNextControllerEvent(event);
+		controllerEvent(event);
+	}
 
 	if (bIsLeftTriggerPressed) {
-		if (openVR.isControllerConnected(vr::TrackedControllerRole_LeftHand)) {
+		if (openVR.isControllerConnected(0)) {
 			// Getting the translation component of the controller pose matrix
-			leftControllerPosition = openVR.getControllerPose(vr::TrackedControllerRole_LeftHand)[3];
+			leftControllerPosition = openVR.getControllerCenter(0);
 
 			if (lastLeftControllerPosition.distance(leftControllerPosition) >= polylineResolution) {
 				leftControllerPolylines[leftControllerPolylines.size() - 1].lineTo(leftControllerPosition);
@@ -75,9 +76,9 @@ void ofApp::update(){
 	}
 
 	if (bIsRightTriggerPressed) {
-		if (openVR.isControllerConnected(vr::TrackedControllerRole_RightHand)) {
+		if (openVR.isControllerConnected(1)) {
 			// Getting the translation component of the controller pose matrix
-			rightControllerPosition = openVR.getControllerPose(vr::TrackedControllerRole_RightHand)[3];
+			rightControllerPosition = openVR.getControllerCenter(1);
 
 			if (lastRightControllerPosition.distance(rightControllerPosition) >= polylineResolution) {
 				rightControllerPolylines[rightControllerPolylines.size() - 1].lineTo(rightControllerPosition);
@@ -89,8 +90,10 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	openVR.render();
-	openVR.renderDistortion();
+	ofBackground(0);
+	//openVR.render();
+	//openVR.renderDistortion();
+	openVR.renderScene(openVR.toEye(0));
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
@@ -150,8 +153,12 @@ void  ofApp::render(vr::Hmd_Eye nEye){
 }
 
 //--------------------------------------------------------------
-void ofApp::controllerEvent(ofxOpenVRControllerEventArgs& args){
-	//cout << "ofApp::controllerEvent > role: " << ofToString(args.controllerRole) << " - event type: " << ofToString(args.eventType) << " - button type: " << ofToString(args.buttonType) << " - x: " << args.analogInput_xAxis << " - y: " << args.analogInput_yAxis << endl;
+void ofApp::controllerEvent(ofxOpenVRControllerEvent& args){
+	cout << "ofApp::controllerEvent > role: " << ofToString(int(args.controllerRole)) 
+		<< " - event type: " << ofToString(int(args.eventType)) 
+		<< " - button type: " << ofToString(int(args.buttonType))
+		<< " - x: " << args.analogInput_xAxis 
+		<< " - y: " << args.analogInput_yAxis << endl;
 	// Left
 	if (args.controllerRole == ControllerRole::Left) {
 		// Trigger

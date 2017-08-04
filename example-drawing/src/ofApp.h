@@ -13,7 +13,7 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void render(vr::Hmd_Eye nEye);
-		void controllerEvent(ofxOpenVRControllerEventArgs& args);
+		void controllerEvent(ofxOpenVRControllerEvent& args);
 
 		void keyPressed(int key);
 		void keyReleased(int key);

@@ -248,9 +248,9 @@ glm::mat4x4 ofxOpenVR::getControllerPose(int controller)
 }
 
 //--------------------------------------------------------------
-vr::ETrackedControllerRole ofxOpenVR::toControllerRole(int i) {	//0 - left, 1 - right
-	if (i == 0) return vr::TrackedControllerRole_LeftHand;
-	if (i == 1) return vr::TrackedControllerRole_RightHand;
+vr::ETrackedControllerRole ofxOpenVR::toControllerRole(int controller) {	//0 - left, 1 - right
+	if (controller == 0) return vr::TrackedControllerRole_LeftHand;
+	if (controller == 1) return vr::TrackedControllerRole_RightHand;
 	return vr::TrackedControllerRole_Invalid;
 }
 
@@ -261,9 +261,14 @@ vr::Hmd_Eye ofxOpenVR::toEye(int i) {	//0 - left, 1 - right
 }
 
 //--------------------------------------------------------------
+int ofxOpenVR::toDeviceId(int controller) {
+	return (controller == 0) ? _leftControllerDeviceID : _rightControllerDeviceID;
+}
+
+//--------------------------------------------------------------
 float ofxOpenVR::getTriggerState(int controller) {
 	if (!_pHMD) return 0;
-	int id = (controller == 0) ? _leftControllerDeviceID : _rightControllerDeviceID;
+	int id = toDeviceId(controller);
 	if (_pHMD->IsTrackedDeviceConnected(id)) {
 		vr::VRControllerState_t state;
 		bool res = _pHMD->GetControllerState(id, &state, sizeof(state));
@@ -895,7 +900,7 @@ bool ofxOpenVR::hasControllerEvents() {
 }
 
 //--------------------------------------------------------------
-bool ofxOpenVR::getNextControllerMessage(ofxOpenVRControllerEvent &event) {
+bool ofxOpenVR::getNextControllerEvent(ofxOpenVRControllerEvent &event) {
 	if (hasControllerEvents()) {
 		event = controller_events_[0];
 		controller_events_.erase(controller_events_.begin());
@@ -1084,6 +1089,25 @@ void ofxOpenVR::renderStereoTargets()
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getControllerCenter(int controller) {
+	glm::mat4x4 pose = getControllerPose(controller);
+	return ofPoint(pose * glm::vec4(0, 0, 0, 1));
+}
+
+//--------------------------------------------------------------
+ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,OY,OZ, result is normalized
+	glm::mat4x4 pose = getControllerPose(controller);
+	glm::vec4 center(0, 0, 0, 1);
+	glm::vec4 point = center;
+	point[axe] += 0.05f;
+	point = pose * point - pose * center;
+	ofPoint v(point);
+	v.normalize();
+	return v;
 }
 
 //--------------------------------------------------------------
