@@ -49,7 +49,7 @@ enum class ButtonType
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-class ofxOpenVRControllerEventArgs : public ofEventArgs
+class ofxOpenVRControllerEvent
 {
 public:
 	ControllerRole controllerRole;
@@ -101,7 +101,7 @@ public:
 
 	//Controllers events. Note: the queue of events is cleared at each update call.
 	bool hasControllerEvents();
-	bool getNextControllerMessage(ofxOpenVRControllerEventArgs &event);
+	bool getNextControllerMessage(ofxOpenVRControllerEvent &event);
 	float getTriggerState(int controller);	//0..1
 	ofPoint getTrackPadState(int controller); //[-1..1]x[-1..1]
 
@@ -110,7 +110,7 @@ public:
 	vr::Hmd_Eye toEye(int i);	//0 - left, 1 - right
 
 protected:
-	vector<ofxOpenVRControllerEventArgs> controller_events_;
+	vector<ofxOpenVRControllerEvent> controller_events_;
 
 
 	struct VertexDataScene

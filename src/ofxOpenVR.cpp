@@ -893,7 +893,7 @@ bool ofxOpenVR::hasControllerEvents() {
 }
 
 //--------------------------------------------------------------
-bool ofxOpenVR::getNextControllerMessage(ofxOpenVRControllerEventArgs &event) {
+bool ofxOpenVR::getNextControllerMessage(ofxOpenVRControllerEvent &event) {
 	if (hasControllerEvents()) {
 		event = controller_events_[0];
 		controller_events_.erase(controller_events_.begin());
@@ -912,7 +912,7 @@ void ofxOpenVR::processVREvent(const vr::VREvent_t & event)
 	switch (_pHMD->GetTrackedDeviceClass(event.trackedDeviceIndex))
 	{
 		case vr::TrackedDeviceClass_Controller:
-			ofxOpenVRControllerEventArgs _args;
+			ofxOpenVRControllerEvent _args;
 
 			// Controller's role.
 			if (_pHMD->GetControllerRoleForTrackedDeviceIndex(event.trackedDeviceIndex) == vr::TrackedControllerRole_LeftHand) {
