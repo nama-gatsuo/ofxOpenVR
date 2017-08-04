@@ -72,7 +72,7 @@
 	}
 	void  ofApp::render(vr::Hmd_Eye nEye) {
 		openVR.pushMatricesForRender(nEye);
-		pano.render(nEye);
+		pano.draw();
 		openVR.popMatricesForRender();
 	}
 	*/
@@ -81,8 +81,8 @@
 class ofxOpenVRPanoramic {
 public:
 	void setup(ofxOpenVR &openVR, string imageFileName);
-	void render(vr::Hmd_Eye nEye);
-
+	void draw();
+	ofImage &image() { return image_; }
 protected:
 	ofImage image_;
 	ofShader shader_;

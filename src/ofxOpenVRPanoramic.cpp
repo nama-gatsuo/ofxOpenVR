@@ -62,27 +62,13 @@ void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
 }
 
 //--------------------------------------------------------------
-void  ofxOpenVRPanoramic::render(vr::Hmd_Eye nEye) {
-
-	/*ofPushMatrix();
-	ofPushView();
-	ofSetMatrixMode(OF_MATRIX_PROJECTION);
-	ofLoadMatrix(openVR_->getCurrentProjectionMatrix(nEye));
-	ofSetMatrixMode(OF_MATRIX_MODELVIEW);
-	ofMatrix4x4 currentViewMatrixInvertY = openVR_->getCurrentViewMatrix(nEye);
-	currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);
-	ofLoadMatrix(currentViewMatrixInvertY);
-	*/
+void  ofxOpenVRPanoramic::draw() {
 	ofSetColor(ofColor::white);
 
 	shader_.begin();
 	shader_.setUniformTexture("tex0", image_, 1);
 	sphere_.draw();
 	shader_.end();
-
-	//ofPopView();
-	//ofPopMatrix();
-
 }
 
 //--------------------------------------------------------------

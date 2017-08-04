@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxOpenVR.h"
+#include "ofxOpenVRPanoramic.h"
 
 class ofApp : public ofBaseApp{
 
@@ -27,11 +28,9 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
 		ofxOpenVR openVR;
+		ofxOpenVRPanoramic pano;
 
 		bool bShowHelp;
 		std::ostringstream _strHelp;
 
-		ofImage image;
-		ofShader shader;
-		ofSpherePrimitive sphere;
 };

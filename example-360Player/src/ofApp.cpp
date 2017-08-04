@@ -1,3 +1,4 @@
+//Modified example for panoramic player by Kuflex, 2017
 // Thanks to @num3ric for sharing this:
 // http://discourse.libcinder.org/t/360-vr-video-player-for-ios-in-cinder/294/6
 
@@ -11,11 +12,7 @@ void ofApp::setup(){
 	// We need to pass the method we want ofxOpenVR to call when rending the scene
 	openVR.setup(std::bind(&ofApp::render, this, std::placeholders::_1));
 
-	image.load("DSCN0143.JPG");
-	shader.load("sphericalProjection");
-
-	sphere.set(10, 10);
-	sphere.setPosition(glm::vec3(.0f, .0f, .0f));
+	pano.setup(openVR, "DSCN0143.JPG");
 
 	bShowHelp = true;
 }
@@ -54,12 +51,7 @@ void  ofApp::render(vr::Hmd_Eye nEye) {
 
 	openVR.pushMatricesForRender(nEye);
 
-	ofSetColor(ofColor::white);
-
-	shader.begin();
-	shader.setUniformTexture("tex0", image, 1);
-	sphere.draw();
-	shader.end();
+	pano.draw();
 
 	openVR.popMatricesForRender();
 
@@ -132,6 +124,6 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {
 	std::string path = dragInfo.files[0];
 	std::replace(path.begin(), path.end(), '\\', '/');
 
-	image.load(path);
-	image.update();
+	pano.image().load(path);
+	pano.image().update();
 }

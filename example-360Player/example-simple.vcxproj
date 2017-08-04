@@ -180,6 +180,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\ofxOpenVRPanoramic.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ofApp.cpp" />
     <ClCompile Include="..\..\..\addons\ofxOpenVR\src\CGLRenderModel.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="..\..\..\addons\ofxOpenVR\libs\OpenVR\src\jsoncpp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\ofxOpenVRPanoramic.h" />
     <ClInclude Include="src\ofApp.h" />
     <ClInclude Include="..\..\..\addons\ofxOpenVR\src\CGLRenderModel.h" />
     <ClInclude Include="..\..\..\addons\ofxOpenVR\src\ofxOpenVR.h" />

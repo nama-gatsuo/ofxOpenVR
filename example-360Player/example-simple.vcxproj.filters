@@ -22,6 +22,9 @@
     <ClCompile Include="..\..\..\addons\ofxOpenVR\libs\OpenVR\src\jsoncpp.cpp">
       <Filter>addons\ofxOpenVR\libs\OpenVR\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\ofxOpenVRPanoramic.cpp">
+      <Filter>addons\ofxOpenVR\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -82,6 +85,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\addons\ofxOpenVR\libs\OpenVR\src\json\json.h">
       <Filter>addons\ofxOpenVR\libs\OpenVR\src\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxOpenVRPanoramic.h">
+      <Filter>addons\ofxOpenVR\src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
