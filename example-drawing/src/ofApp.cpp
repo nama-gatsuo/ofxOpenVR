@@ -91,9 +91,9 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	ofBackground(0);
-	//openVR.render();
-	//openVR.renderDistortion();
-	openVR.renderScene(openVR.toEye(0));
+	openVR.render();
+	openVR.renderDistortion();
+	//openVR.renderScene(openVR.toEye(0));
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
