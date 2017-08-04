@@ -127,6 +127,23 @@ void ofxOpenVR::update()
 }
 
 //--------------------------------------------------------------
+void ofxOpenVR::pushMatricesForRender(vr::Hmd_Eye nEye) {
+	ofPushView();
+	ofSetMatrixMode(OF_MATRIX_PROJECTION);
+	ofLoadMatrix(getCurrentProjectionMatrix(nEye));
+	ofSetMatrixMode(OF_MATRIX_MODELVIEW);
+	ofMatrix4x4 currentViewMatrixInvertY = getCurrentViewMatrix(nEye);
+	currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);
+	ofLoadMatrix(currentViewMatrixInvertY);
+}
+
+//--------------------------------------------------------------
+void ofxOpenVR::popMatricesForRender() {
+	ofPopView();
+}
+
+
+//--------------------------------------------------------------
 void ofxOpenVR::render()
 {
 	// for now as fast as possible

@@ -67,11 +67,13 @@
 
 	void ofApp::draw() {
 		openVR.render();
-		openVR.renderDistortion();
+		openVR.renderScene(vr::Eye_Left);
 		openVR.drawDebugInfo(10.0f, 500.0f);
 	}
 	void  ofApp::render(vr::Hmd_Eye nEye) {
+		openVR.pushMatricesForRender(nEye);
 		pano.render(nEye);
+		openVR.popMatricesForRender();
 	}
 	*/
 

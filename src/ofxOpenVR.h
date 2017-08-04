@@ -69,6 +69,12 @@ public:
 
 	void update();
 
+	//---- for usage inside ofApp::render
+	void pushMatricesForRender(vr::Hmd_Eye nEye);
+	void popMatricesForRender();
+
+
+	//---- rendering
 	void setRenderModelForTrackedDevices(bool bRender);
 	bool getRenderModelForTrackedDevices();
 

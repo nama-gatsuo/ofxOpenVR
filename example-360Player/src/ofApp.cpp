@@ -33,7 +33,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	openVR.render();
-	openVR.renderDistortion();
+	//openVR.renderDistortion();
+	openVR.renderScene(vr::Eye_Left);
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
@@ -51,13 +52,7 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void  ofApp::render(vr::Hmd_Eye nEye) {
 
-	ofPushView();
-	ofSetMatrixMode(OF_MATRIX_PROJECTION);
-	ofLoadMatrix(openVR.getCurrentProjectionMatrix(nEye));
-	ofSetMatrixMode(OF_MATRIX_MODELVIEW);
-	ofMatrix4x4 currentViewMatrixInvertY = openVR.getCurrentViewMatrix(nEye);
-	currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);
-	ofLoadMatrix(currentViewMatrixInvertY);
+	openVR.pushMatricesForRender(nEye);
 
 	ofSetColor(ofColor::white);
 
@@ -66,7 +61,7 @@ void  ofApp::render(vr::Hmd_Eye nEye) {
 	sphere.draw();
 	shader.end();
 
-	ofPopView();
+	openVR.popMatricesForRender();
 
 }
 

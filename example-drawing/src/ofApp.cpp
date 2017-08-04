@@ -7,7 +7,7 @@ void ofApp::setup(){
 	ofSetVerticalSync(false);
 
 	bShowHelp = true;
-	bUseShader = true;
+	bUseShader = false;
 	bIsLeftTriggerPressed = false;
 	bIsRightTriggerPressed = false;
 
@@ -90,10 +90,9 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	ofBackground(0);
 	openVR.render();
-	openVR.renderDistortion();
-	//openVR.renderScene(openVR.toEye(0));
+	//openVR.renderDistortion();
+	openVR.renderScene(vr::Eye_Left);
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
@@ -131,13 +130,8 @@ void  ofApp::render(vr::Hmd_Eye nEye){
 	}
 	// Loading matrices
 	else {
-		ofPushView();
-		ofSetMatrixMode(OF_MATRIX_PROJECTION);
-		ofLoadMatrix(openVR.getCurrentProjectionMatrix(nEye));
-		ofSetMatrixMode(OF_MATRIX_MODELVIEW);
-		ofMatrix4x4 currentViewMatrixInvertY = openVR.getCurrentViewMatrix(nEye);
-		currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);
-		ofLoadMatrix(currentViewMatrixInvertY);
+		openVR.pushMatricesForRender(nEye);
+
 
 		ofSetColor(ofColor::white);
 
@@ -148,7 +142,8 @@ void  ofApp::render(vr::Hmd_Eye nEye){
 		for (auto pl : rightControllerPolylines) {
 			pl.draw();
 		}
-		ofPopView();
+		
+		openVR.popMatricesForRender();
 	}
 }
 
