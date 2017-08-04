@@ -86,7 +86,7 @@ public:
 
 	//HMD
 	glm::mat4x4 getHDMPose();
-	ofPoint getHDMCenter(int controller);
+	ofPoint getHDMCenter();
 	ofPoint getHDMAxe(int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 	
 	glm::mat4x4 getHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
@@ -193,6 +193,8 @@ protected:
 	GLuint _glIDVertBuffer;
 	GLuint _glIDIndexBuffer;
 	unsigned int _uiIndexSize;
+
+	glm::mat4x4 _mat4HMDPose_world;	//for using this pose in world rendering
 
 	glm::mat4x4 _mat4HMDPose;
 	glm::mat4x4 _mat4eyePosLeft;

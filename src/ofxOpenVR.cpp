@@ -873,7 +873,7 @@ void ofxOpenVR::updateDevicesMatrixPose()
 
 			// Store HMD matrix. 
 			if (_pHMD->GetTrackedDeviceClass(nDevice) == vr::TrackedDeviceClass_HMD) {
-
+				_mat4HMDPose_world = _rmat4DevicePose[nDevice];
 			}
 
 			// Store controllers' ID and matrix. 
@@ -1133,11 +1133,11 @@ ofPoint ofxOpenVR::get_axe(const glm::mat4x4 &pose, int axe) {	//axe 0,1,2 - OX,
 
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getHDMPose() {
-	return _mat4HMDPose;
+	return _mat4HMDPose_world;
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getHDMCenter(int controller) {
+ofPoint ofxOpenVR::getHDMCenter() {
 	return get_center(getHDMPose());
 }
 
