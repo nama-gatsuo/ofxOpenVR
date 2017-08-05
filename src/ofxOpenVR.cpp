@@ -316,7 +316,11 @@ ofPoint ofxOpenVR::getTrackPadState(int controller) {
 	if (_pHMD->IsTrackedDeviceConnected(id)) {
 		vr::VRControllerState_t state;
 		bool res = _pHMD->GetControllerState(id, &state, sizeof(state));
-		if (res) return ofPoint(state.rAxis[0].x, state.rAxis[0].y);
+		if (res) {
+			bool touched = state.ulButtonTouched;
+			if (touched) return ofPoint(state.rAxis[0].x, state.rAxis[0].y);
+			else return ofPoint(-1000, -1000, 0);
+		}
 	}
 	return ofPoint();
 }

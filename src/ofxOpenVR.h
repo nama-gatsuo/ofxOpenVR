@@ -115,7 +115,7 @@ public:
 	ofPoint getControllerCenter(int controller);
 	ofPoint getControllerAxe(int controller, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 	float getTriggerState(int controller);	//0..1
-	ofPoint getTrackPadState(int controller); //[-1..1]x[-1..1]
+	ofPoint getTrackPadState(int controller); //if touched[-1..1]x[-1..1], else (-1000,-1000)
 
 	//Controllers events. Note: the queue of events is cleared at each update call.
 	bool hasControllerEvents();
