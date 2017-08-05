@@ -80,10 +80,14 @@
 
 class ofxOpenVRPanoramic {
 public:
+	ofxOpenVRPanoramic();
 	void setup(ofxOpenVR &openVR, string imageFileName);
+	void loadImage(string imageFileName);
 	void draw();
 	ofImage &image() { return image_; }
+	bool isInitialized() { return inited_; }
 protected:
+	bool inited_;
 	ofImage image_;
 	ofShader shader_;
 	ofSpherePrimitive sphere_;

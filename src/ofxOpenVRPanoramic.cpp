@@ -3,6 +3,11 @@
 #define STRINGIFY(A) #A 
 
 //--------------------------------------------------------------
+ofxOpenVRPanoramic::ofxOpenVRPanoramic() {
+	inited_ = false;
+}
+
+//--------------------------------------------------------------
 void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
 	ofSetVerticalSync(false);
 
@@ -58,11 +63,20 @@ void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
 	shader_.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
 	shader_.bindDefaults();
 	shader_.linkProgram();
+
+	inited_ = true;
 	
 }
 
 //--------------------------------------------------------------
+void ofxOpenVRPanoramic::loadImage(string imageFileName) {
+	image_.load(imageFileName);
+}
+
+//--------------------------------------------------------------
 void  ofxOpenVRPanoramic::draw() {
+	if (!inited_) return;
+
 	ofSetColor(ofColor::white);
 
 	shader_.begin();
