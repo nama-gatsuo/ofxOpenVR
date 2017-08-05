@@ -317,7 +317,8 @@ ofPoint ofxOpenVR::getTrackPadState(int controller) {
 		vr::VRControllerState_t state;
 		bool res = _pHMD->GetControllerState(id, &state, sizeof(state));
 		if (res) {
-			bool touched = state.ulButtonTouched;
+			bool touched = state.ulButtonTouched & 4294967296;  //this constant is 2^vk::k_EButton_SteamVR_Touchpad
+			//cout << state.ulButtonTouched << endl;
 			if (touched) return ofPoint(state.rAxis[0].x, state.rAxis[0].y);
 			else return ofPoint(-1000, -1000, 0);
 		}
