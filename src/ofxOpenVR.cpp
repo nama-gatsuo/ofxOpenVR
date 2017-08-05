@@ -1428,6 +1428,11 @@ void ofxOpenVR::setupRenderModels()
 		if (!_pHMD->IsTrackedDeviceConnected(unTrackedDevice)) {
 			continue;
 		}
+
+		//do not show bases!
+		if (_pHMD->GetTrackedDeviceClass(unTrackedDevice) == vr::ETrackedDeviceClass::TrackedDeviceClass_TrackingReference) {
+			continue;	
+		}
 		
 		setupRenderModelForTrackedDevice(unTrackedDevice);
 	}
