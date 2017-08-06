@@ -331,6 +331,9 @@ ofPoint ofxOpenVR::getTrackPadState(int controller) {
 * and axis combination for 5ms. */
 //virtual void TriggerHapticPulse(vr::TrackedDeviceIndex_t unControllerDeviceIndex, uint32_t unAxisId, unsigned short usDurationMicroSec) = 0;
 
+//https://steamcommunity.com/app/358720/discussions/0/405693392914144440/
+
+
 //--------------------------------------------------------------
 bool ofxOpenVR::isControllerConnected(int controller)
 {
