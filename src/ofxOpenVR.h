@@ -69,19 +69,34 @@ public:
 
 	void update();
 
-	//---- for usage inside ofApp::render
-	void pushMatricesForRender(vr::Hmd_Eye nEye);
-	void popMatricesForRender();
+	//---- Setting up rendering matrices, for drawing without shaders
+	//Prepare matrices for VR rendering
+	//Note, this function also calls openVR.flipVr(), 
+	//so some rendering may be flipped.
+	//For 2D rendering in FBO you can call openVR.flipOf(), 
+	//and then restore the mode back by calling openVR.flipVr().
+	//(For currently unknown reason, flipping of matrix in oF causes inaccuracy on rendering VR,
+	//So this function discards this flipping by calling setFlipVr() )
+	void pushMatricesForRender(vr::Hmd_Eye nEye); 
+
+	//This function restores matrices after rendering. 
+	//Note: Also it resets orientation mode by calling setFlipOf()
+	void popMatricesForRender(); 
+
+	void setFlipVr();		//just calls ofSetOrientation(OF_ORIENTATION_DEFAULT,true)
+	void setFlipOf();		//just calls ofSetOrientation(OF_ORIENTATION_DEFAULT,false)
 
 
-	//---- rendering
-	void setRenderModelForTrackedDevices(bool bRender);
-	bool getRenderModelForTrackedDevices();
-
+	//---- rendering the whole scene
 	void render();
 	void renderDistortion();
 	void renderScene(vr::Hmd_Eye nEye);
 
+	void setRenderModelForTrackedDevices(bool bRender);		
+	bool getRenderModelForTrackedDevices();
+
+
+	//---- debug output
 	void drawDebugInfo(float x = 10.0f, float y = 20.0f);
 
 	//HMD
@@ -244,3 +259,5 @@ protected:
 	std::vector< CGLRenderModel * > _vecRenderModels;
 	CGLRenderModel *_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 };
+
+extern ofxOpenVR openVR;

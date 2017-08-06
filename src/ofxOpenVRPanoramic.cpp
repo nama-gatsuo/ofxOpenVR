@@ -1,6 +1,8 @@
 #include "ofxOpenVRPanoramic.h"
 
+#ifndef STRINGIFY
 #define STRINGIFY(A) #A 
+#endif
 
 //--------------------------------------------------------------
 ofxOpenVRPanoramic::ofxOpenVRPanoramic() {

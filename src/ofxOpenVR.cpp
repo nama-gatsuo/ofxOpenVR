@@ -1,6 +1,10 @@
 #include "ofxOpenVR.h"
 
+#ifndef STRINGIFY
 #define STRINGIFY(A) #A
+#endif
+
+ofxOpenVR openVR;
 
 //--------------------------------------------------------------
 // Purpose: Helper to get a string from a tracked device 
@@ -127,19 +131,32 @@ void ofxOpenVR::update()
 }
 
 //--------------------------------------------------------------
+void ofxOpenVR::setFlipOf() {
+	ofSetOrientation(OF_ORIENTATION_DEFAULT, true);
+}
+
+//--------------------------------------------------------------
+void ofxOpenVR::setFlipVr() {
+	ofSetOrientation(OF_ORIENTATION_DEFAULT, false);
+}
+
+//--------------------------------------------------------------
 void ofxOpenVR::pushMatricesForRender(vr::Hmd_Eye nEye) {
+	setFlipVr();
+
 	ofPushView();
 	ofSetMatrixMode(OF_MATRIX_PROJECTION);
 	ofLoadMatrix(getCurrentProjectionMatrix(nEye));
 	ofSetMatrixMode(OF_MATRIX_MODELVIEW);
 	ofMatrix4x4 currentViewMatrixInvertY = getCurrentViewMatrix(nEye);
-	currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);
+	//currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);	//we call instead ofSetOrientation(OF_ORIENTATION_DEFAULT, false) to eliminate inaccuracies
 	ofLoadMatrix(currentViewMatrixInvertY);
 }
 
 //--------------------------------------------------------------
 void ofxOpenVR::popMatricesForRender() {
 	ofPopView();
+	setFlipOf();
 }
 
 

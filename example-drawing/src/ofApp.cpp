@@ -7,7 +7,7 @@ void ofApp::setup(){
 	ofSetVerticalSync(false);
 
 	bShowHelp = true;
-	bUseShader = true;		//Using shaders is a more tricky than without shaders, but gives more accurate randering. Compare it by pressing Space
+	bUseShader = true;		//Rendering with and without shaders should give the same result, so check it by pressing Space
 	bIsLeftTriggerPressed = false;
 	bIsRightTriggerPressed = false;
 
@@ -132,7 +132,13 @@ void  ofApp::render(vr::Hmd_Eye nEye){
 	}
 	// Loading matrices
 	else {
+		//Prepare matrices for VR rendering
+		//Note, this function also calls openVR.flipVr(), 
+		//so some rendering may be flipped.
+		//For 2D rendering in FBO you can call openVR.flipOf(), 
+		//and then restore the mode back by calling openVR.flipVr().
 		openVR.pushMatricesForRender(nEye);
+
 
 
 		ofSetColor(ofColor::white);
@@ -252,7 +258,7 @@ void ofApp::keyPressed(int key){
 			break;
 
 		case ' ':
-			bUseShader = !bUseShader;
+			bUseShader = !bUseShader;	//switch shaders. The result should be the same
 			break;
 
 		default:
