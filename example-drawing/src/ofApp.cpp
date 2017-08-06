@@ -7,7 +7,7 @@ void ofApp::setup(){
 	ofSetVerticalSync(false);
 
 	bShowHelp = true;
-	bUseShader = false;
+	bUseShader = true;		//Using shaders is a more tricky than without shaders, but gives more accurate randering. Compare it by pressing Space
 	bIsLeftTriggerPressed = false;
 	bIsRightTriggerPressed = false;
 
@@ -91,8 +91,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	openVR.render();
-	//openVR.renderDistortion();
-	openVR.renderScene(vr::Eye_Left);
+	openVR.renderDistortion();
+	//openVR.renderScene(vr::Eye_Left);
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
@@ -106,6 +106,8 @@ void ofApp::draw(){
 		_strHelp << "Press the Grip button to clear all the lines drawn with that specific controller." << endl;
 		_strHelp << "Drawing resolution " << polylineResolution << " (press: +/-)." << endl;
 		_strHelp << "Drawing default 3D models " << openVR.getRenderModelForTrackedDevices() << " (press: m)." << endl;
+		_strHelp << "Using shader (' '):  " << ((bUseShader) ? "TRUE" : "FALSE") << endl;
+		
 		ofDrawBitmapStringHighlight(_strHelp.str(), ofPoint(10.0f, 20.0f), ofColor(ofColor::black, 100.0f));
 	}
 }
@@ -247,6 +249,10 @@ void ofApp::keyPressed(int key){
 
 		case 'm':
 			openVR.setRenderModelForTrackedDevices(!openVR.getRenderModelForTrackedDevices());
+			break;
+
+		case ' ':
+			bUseShader = !bUseShader;
 			break;
 
 		default:
