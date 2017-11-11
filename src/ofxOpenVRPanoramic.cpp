@@ -10,7 +10,7 @@ ofxOpenVRPanoramic::ofxOpenVRPanoramic() {
 }
 
 //--------------------------------------------------------------
-void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
+void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName, float sphere_rad){
 	ofSetVerticalSync(false);
 
 	cout << "For ofxOpenVRPanoramic we need to call ofDisableArbTex(), so we do it..." << endl;
@@ -19,7 +19,7 @@ void ofxOpenVRPanoramic::setup(ofxOpenVR &openVR, string imageFileName){
 	openVR_ = &openVR;
 
 	image_.load(imageFileName);
-	sphere_.set(20, 10);
+	sphere_.set(sphere_rad, 10);
 	sphere_.setPosition(glm::vec3(.0f, .0f, .0f));
 
 	//Shader setup

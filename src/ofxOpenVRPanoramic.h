@@ -81,7 +81,7 @@
 class ofxOpenVRPanoramic {
 public:
 	ofxOpenVRPanoramic();
-	void setup(ofxOpenVR &openVR, string imageFileName);
+	void setup(ofxOpenVR &openVR, string imageFileName, float sphere_rad=20.0);
 	void loadImage(string imageFileName);
 	void draw();
 	ofImage &image() { return image_; }
