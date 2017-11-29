@@ -12,7 +12,7 @@ struct ofxOpenVRSyncCoord {
 
 	void reset();							//sets unit matrix
 	void moveBy(ofPoint shift);				//move
-	void rotateBy(ofPoint vec, float degrees); //rotate
+	void rotateBy(ofPoint direction, ofPoint origin, float degrees); //rotate
 
 	ofMatrix4x4 &matrix() { return matrix_; }
 protected:

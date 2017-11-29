@@ -47,10 +47,13 @@ void ofxOpenVRSyncCoord::moveBy(ofPoint shift) {				//move
 }
 
 //--------------------------------------------------------------
-void ofxOpenVRSyncCoord::rotateBy(ofPoint vec, float degrees) { //rotate
+void ofxOpenVRSyncCoord::rotateBy(ofPoint direction, ofPoint origin, float degrees) { //rotate
+	ofMatrix4x4 t1, t2;
 	ofMatrix4x4 m;
-	m.makeRotationMatrix(degrees, vec.x, vec.y, vec.z);
-	matrix_ *= m;
+	t1.makeTranslationMatrix(-origin);
+	t2.makeTranslationMatrix(origin);
+	m.makeRotationMatrix(degrees, direction.x, direction.y, direction.z);
+	matrix_ *= t1 * m * t2;
 } 
 
 //--------------------------------------------------------------
