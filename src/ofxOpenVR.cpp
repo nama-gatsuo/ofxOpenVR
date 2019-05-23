@@ -1,4 +1,5 @@
 #include "ofxOpenVR.h"
+#include "ofGLProgrammableRenderer.h"
 
 #ifndef STRINGIFY
 #define STRINGIFY(A) #A
@@ -182,6 +183,9 @@ void ofxOpenVR::render()
 		// 1/29/2014 mikesart
 		glFinish();
 	}
+
+	glDisable(GL_DEPTH_TEST);
+	glViewport(0, 0, ofGetWidth(), ofGetHeight());
 }
 
 //--------------------------------------------------------------
@@ -515,6 +519,9 @@ bool ofxOpenVR::initCompositor()
 //--------------------------------------------------------------
 bool ofxOpenVR::createAllShaders()
 {
+	//Contrast shader
+	create_contrast_shader();
+
 	// Controller transform shader
 	string vertex = "#version 410\n";
 	vertex += STRINGIFY(
@@ -628,6 +635,52 @@ bool ofxOpenVR::createAllShaders()
 
 	return true;
 }
+
+//--------------------------------------------------------------
+void ofxOpenVR::create_contrast_shader() {
+	// Contrast shader, used in draw_using_contrast_shader
+	string vertex = "#version 410\n";
+	vertex += STRINGIFY(
+		uniform mat4 modelViewProjectionMatrix;
+	in vec4 position;
+	in vec2 texcoord;
+	out vec2 texCoordVarying;
+
+	void main()
+	{
+		texCoordVarying = texcoord;
+		gl_Position = modelViewProjectionMatrix * position;
+	}
+	);
+
+	string fragment = "#version 410\n";
+	fragment += STRINGIFY(
+		uniform sampler2D tex0;
+	uniform float contrast0 = 0.2;
+	uniform float contrast1 = 0.6;
+	in vec2 texCoordVarying;
+	out vec4 outputColor;
+
+	float mapf(float x, float a, float b, float A, float B) {
+		return (x - a) / (b - a)*(B - A) + A;
+	}
+
+	void main()
+	{
+		outputColor = texture(tex0, texCoordVarying);
+		float br = (outputColor.r + outputColor.g + outputColor.b) / 3;
+		//float br1 = pow(br,0.25);
+		float br1 = mapf(br, contrast0, contrast1, 0, 1);
+		outputColor *= br1 / br;
+	}
+	);
+
+	contrast_shader_.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
+	contrast_shader_.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
+	contrast_shader_.bindDefaults();
+	contrast_shader_.linkProgram();
+}
+
 
 //--------------------------------------------------------------
 bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc)
@@ -1284,6 +1337,68 @@ void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 	// User's render function
 	_callableRenderFunction(nEye);
 }
+
+//--------------------------------------------------------------
+//NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
+void ofxOpenVR::draw_using_contrast_shader(float w, float h, float contrast0, float contrast1) {
+	ofShader &shader = contrast_shader_;
+	shader.begin();
+	shader.setUniform1f("contrast0", contrast0);
+	shader.setUniform1f("contrast1", contrast1);
+
+
+	draw_using_binded_shader(w, h);
+
+	shader.end();
+}
+
+//--------------------------------------------------------------
+//NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
+void ofxOpenVR::draw_using_binded_shader(float w, float h) {
+	//ofDisableArbTex();
+
+	glDisable(GL_DEPTH_TEST);
+	glViewport(0, 0, ofGetWidth(), ofGetHeight());
+
+	//ofPushMatrix();
+	float W = render_width();
+	float H = render_height();
+	W = max(W, 1.0f);
+	H = max(H, 1.0f);
+	//float scl = min(w / W, h / H);  //FIT
+	float scl = max(w / W, h / H);	//CROP  TODO!! где-то глюк настроек текстуры, не раст€гивает текстуру больше render_w
+	float w1 = W * scl;
+	float h1 = H * scl;
+	float x0 = (w - w1) / 2;
+	float y0 = (h - h1) / 2;
+
+	int texw = 1; //W
+	int texh = 1; //H;
+	ofMesh mesh;
+	mesh.addVertex(ofPoint(x0, y0));
+	mesh.addVertex(ofPoint(x0+w1, y0));
+	mesh.addVertex(ofPoint(x0+w1, y0+h1));
+	mesh.addVertex(ofPoint(x0, y0+h1));
+	mesh.addTexCoord(ofVec2f(0, 1));
+	mesh.addTexCoord(ofVec2f(texw, 1));
+	mesh.addTexCoord(ofVec2f(texw, 0));
+	mesh.addTexCoord(ofVec2f(0, 0));
+	mesh.addTriangle(0, 1, 2);
+	mesh.addTriangle(0, 2, 3);
+
+
+
+	glBindTexture(GL_TEXTURE_2D, leftEyeDesc._nResolveTextureId);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glActiveTexture(GL_TEXTURE0);
+
+	mesh.drawFaces();
+	
+}
+
 
 //--------------------------------------------------------------
 void ofxOpenVR::renderDistortion()

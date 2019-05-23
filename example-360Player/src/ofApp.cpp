@@ -7,7 +7,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	ofSetVerticalSync(false);
-	ofDisableArbTex();
+	ofDisableArbTex(); //required for using "sampler2D" instead "sampler2DRect" in shaders
 
 	// We need to pass the method we want ofxOpenVR to call when rending the scene
 	openVR.setup(std::bind(&ofApp::render, this, std::placeholders::_1));
@@ -25,14 +25,15 @@ void ofApp::exit() {
 //--------------------------------------------------------------
 void ofApp::update(){
 	openVR.update();
+	openVR.render();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	openVR.render();
 	//openVR.renderDistortion();
-	openVR.renderScene(vr::Eye_Left);
-
+	//openVR.renderScene(vr::Eye_Left);
+	openVR.draw_using_contrast_shader(ofGetWidth(), ofGetHeight());
+	
 	openVR.drawDebugInfo(10.0f, 500.0f);
 
 	// Help

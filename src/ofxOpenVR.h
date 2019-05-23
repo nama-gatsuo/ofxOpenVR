@@ -88,9 +88,19 @@ public:
 
 
 	//---- rendering the whole scene
-	void render();
-	void renderDistortion();
-	void renderScene(vr::Hmd_Eye nEye);
+	void render();				//This is the MAIN rendering function to draw into HDM, you may call call it in update()
+								//Also it fills buffers, which are used by renderDistortion() and draw()
+	void renderDistortion();	//Can be called after render(), renders distorted stereo picture on the screen
+	void renderScene(vr::Hmd_Eye nEye); //renders image for each eye, direct calling for drawing on screen 
+							//can reduce your app performance, so please use draw() instead.
+
+	//Render left eye (prepared buffer) on the screen - faster than calling renderScene 
+	//render() must be called before draw()
+	//NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
+	void draw_using_contrast_shader(float w, float h, float contrast0 = 0, float contrast1 = 1);
+	void draw_using_binded_shader(float w, float h);	//for custom shader drawing, see create_contrast_shader() for example
+
+
 
 	void setRenderModelForTrackedDevices(bool bRender);		
 	bool getRenderModelForTrackedDevices();
@@ -143,8 +153,14 @@ public:
 	int toDeviceId(int controller);
 
 	//---- Get center and axes from a matrix
-	ofPoint get_center(const glm::mat4x4 &pose);
-	ofPoint get_axe(const glm::mat4x4 &pose, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+	static ofPoint get_center(const glm::mat4x4 &pose);
+	static ofPoint get_axe(const glm::mat4x4 &pose, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+
+	//Size of rendering port for each eye
+	int render_width() { return _nRenderWidth; }
+	int render_height() { return _nRenderHeight; }
+
+
 
 protected:
 	vector<ofxOpenVRControllerEvent> controller_events_;
@@ -258,6 +274,9 @@ protected:
 
 	std::vector< CGLRenderModel * > _vecRenderModels;
 	CGLRenderModel *_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
+
+	ofShader contrast_shader_;	//shader used in draw_using_contrast_shader
+	void create_contrast_shader();
 };
 
 extern ofxOpenVR openVR;
