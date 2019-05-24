@@ -1,10 +1,11 @@
 ofxOpenVR 
 ====================
 Implementation of Valve Software's [OpenVR](https://github.com/ValveSoftware/openvr) API.
-It's forked from smallfly's addon. The most important fix comparing original version is about 
-problem of one eye's vertical shift due matrices computations errors.
+This addon lets create VR applications (using HTC Vive) on openFrameworks, Windows 10. It's forked from smallfly's addon. 
 
-This addon lets create VR applications (using HTC Vive) on openFrameworks, Windows 10.
+The most important fix comparing original version is about 
+problem of one eye's vertical shift due matrices computations errors.
+There are also many smaller improvements, for example, draw_... function for fastest rendering left eye's scene on the screen without additional computations.
 
 ## Requirements
 
