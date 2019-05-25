@@ -97,8 +97,8 @@ public:
 	//Render left eye (prepared buffer) on the screen - faster than calling renderScene 
 	//render() must be called before draw()
 	//NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
-	void draw_using_contrast_shader(float w, float h, float contrast0 = 0, float contrast1 = 1);
-	void draw_using_binded_shader(float w, float h);	//for custom shader drawing, see create_contrast_shader() for example
+	void draw_using_contrast_shader(float w, float h, float contrast0 = 0, float contrast1 = 1, int eye = vr::Eye_Left);
+	void draw_using_binded_shader(float w, float h, int eye = vr::Eye_Left);	//for custom shader drawing, see create_contrast_shader() for example
 
 
 

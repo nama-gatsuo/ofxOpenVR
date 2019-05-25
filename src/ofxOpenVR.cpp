@@ -1340,21 +1340,21 @@ void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 
 //--------------------------------------------------------------
 //NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
-void ofxOpenVR::draw_using_contrast_shader(float w, float h, float contrast0, float contrast1) {
+void ofxOpenVR::draw_using_contrast_shader(float w, float h, float contrast0, float contrast1, int eye) {
 	ofShader &shader = contrast_shader_;
 	shader.begin();
 	shader.setUniform1f("contrast0", contrast0);
 	shader.setUniform1f("contrast1", contrast1);
 
 
-	draw_using_binded_shader(w, h);
+	draw_using_binded_shader(w, h, eye);
 
 	shader.end();
 }
 
 //--------------------------------------------------------------
 //NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
-void ofxOpenVR::draw_using_binded_shader(float w, float h) {
+void ofxOpenVR::draw_using_binded_shader(float w, float h, int eye) {
 	//ofDisableArbTex();
 
 	glDisable(GL_DEPTH_TEST);
@@ -1386,9 +1386,8 @@ void ofxOpenVR::draw_using_binded_shader(float w, float h) {
 	mesh.addTriangle(0, 1, 2);
 	mesh.addTriangle(0, 2, 3);
 
-
-
-	glBindTexture(GL_TEXTURE_2D, leftEyeDesc._nResolveTextureId);
+	GLuint texture_id = (eye == vr::Eye_Left) ? leftEyeDesc._nResolveTextureId : rightEyeDesc._nResolveTextureId;
+	glBindTexture(GL_TEXTURE_2D, texture_id);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
