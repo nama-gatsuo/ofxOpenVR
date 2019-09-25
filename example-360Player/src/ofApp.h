@@ -1,5 +1,7 @@
 #pragma once
 
+//Example of rendering panoramic image in VR using a shader.
+
 #include "ofMain.h"
 #include "ofxOpenVR.h"
 #include "ofxOpenVRPanoramic.h"

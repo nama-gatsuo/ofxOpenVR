@@ -1,8 +1,9 @@
 #pragma once
 
-//Example of rendering lines and working with joysticks in VR,
-//and also, drawing using a shader.
-
+//Example of rendering simplest primitives in VR:
+//points, lines, triangle
+//NOTE: here is rendering without shader.
+//For example with shader - see example-drawing.
 
 #include "ofMain.h"
 #include "ofxOpenVR.h"
@@ -33,20 +34,5 @@ class ofApp : public ofBaseApp{
 
 		ofxOpenVR openVR;
 
-		bool bUseShader;
-		ofShader shader;
-
-		float polylineResolution;
-
-		vector<ofPolyline> leftControllerPolylines;
-		vector<ofPolyline> rightControllerPolylines;
-		bool bIsLeftTriggerPressed;
-		bool bIsRightTriggerPressed;
-		ofVec3f leftControllerPosition;
-		ofVec3f rightControllerPosition;
-		ofVec3f lastLeftControllerPosition;
-		ofVec3f lastRightControllerPosition;
-
-		bool bShowHelp;
-		std::ostringstream _strHelp;
+		
 };

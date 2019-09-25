@@ -93,8 +93,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	//openVR.renderDistortion();
-	//openVR.renderScene(vr::Eye_Left);
-	openVR.draw_using_contrast_shader(ofGetWidth(), ofGetHeight());
+	openVR.renderScene(vr::Eye_Left);
+	//openVR.draw_using_contrast_shader(ofGetWidth(), ofGetHeight());
 
 	openVR.drawDebugInfo(10.0f, 500.0f);
 

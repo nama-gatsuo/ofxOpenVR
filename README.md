@@ -13,17 +13,27 @@ There are also many smaller improvements, for example, draw_... function for fas
 
 * Visual Studio 2017
 
-* openFrameworks 10.1
+* openFrameworks 0.10.1
 
-* ofxOpenVR addon folder, which should be placed to openFrameworks/addons/ofxOpenVR. 
+* ofxOpenVR addon, which should be placed to openFrameworks/addons/ofxOpenVR. 
 
 ## Using addon
 
-* To check all is working, compile and run addon’s examples located 
+* To check VR is working, compile and run addon’s examples located 
 in **openFrameworks/addons/ofxOpenVR**.
-Note, examples are tested in 64-bit mode and as they contain 64-bit version of **openvr_api.dll**.
+Note, examples are tested in 64-bit mode and they must contain 64-bit version of **openvr_api.dll**.
 
 * In your own projects, create the project using **Project Generator**, and
 copy **openvr_api.dll** file to the **bin** folder of the project from **copy_to_bin** addon's folder.
+
+## Examples
+
+* **example-360Player** - example of rendering panoramic image in VR using a shader.
+
+* **example-drawing** - example of rendering lines and working with joysticks in VR.
+Also, it demonstrates drawing geometry using a shader.
+
+* **example-primitives** - the simplest Vr example which renders several points, lines and triangle in VR.
+
 
 
