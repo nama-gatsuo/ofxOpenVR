@@ -193,7 +193,6 @@ protected:
 
 	std::function< void(vr::Hmd_Eye) > _callableRenderFunction;
 
-	bool _bGlFinishHack;
 	bool _bIsGLInit;
 	bool _bIsGridVisible;
 	
@@ -278,5 +277,3 @@ protected:
 	ofShader contrast_shader_;	//shader used in draw_using_contrast_shader
 	void create_contrast_shader();
 };
-
-extern ofxOpenVR openVR;

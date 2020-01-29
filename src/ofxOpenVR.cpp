@@ -5,8 +5,6 @@
 #define STRINGIFY(A) #A
 #endif
 
-ofxOpenVR openVR;
-
 //--------------------------------------------------------------
 // Purpose: Helper to get a string from a tracked device 
 //          property and turn it into a std::string
@@ -37,7 +35,6 @@ void ofxOpenVR::setup(std::function< void(vr::Hmd_Eye) > f)
 	_bIsGLInit = false;
 	_pHMD = NULL;
 	_pRenderModels = NULL;
-	_bGlFinishHack = true;
 	_unLensVAO = 0;
 	_iTrackedControllerCount = 0;
 	_leftControllerDeviceID = -1;
@@ -149,8 +146,7 @@ void ofxOpenVR::pushMatricesForRender(vr::Hmd_Eye nEye) {
 	ofSetMatrixMode(OF_MATRIX_PROJECTION);
 	ofLoadMatrix(getCurrentProjectionMatrix(nEye));
 	ofSetMatrixMode(OF_MATRIX_MODELVIEW);
-	ofMatrix4x4 currentViewMatrixInvertY = getCurrentViewMatrix(nEye);
-	//currentViewMatrixInvertY.scale(1.0f, -1.0f, 1.0f);	//we call instead ofSetOrientation(OF_ORIENTATION_DEFAULT, false) to eliminate inaccuracies
+	glm::mat4 currentViewMatrixInvertY = getCurrentViewMatrix(nEye);
 	ofLoadMatrix(currentViewMatrixInvertY);
 }
 
@@ -173,15 +169,6 @@ void ofxOpenVR::render()
 		vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
 		vr::Texture_t rightEyeTexture = { (void*)(uintptr_t)rightEyeDesc._nResolveTextureId, vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
 		vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
-	}
-
-	if (_bGlFinishHack)
-	{
-		//$ HACKHACK. From gpuview profiling, it looks like there is a bug where two renders and a present
-		// happen right before and after the vsync causing all kinds of jittering issues. This glFinish()
-		// appears to clear that up. Temporary fix while I try to get nvidia to investigate this problem.
-		// 1/29/2014 mikesart
-		glFinish();
 	}
 
 	glDisable(GL_DEPTH_TEST);
@@ -1176,7 +1163,9 @@ void ofxOpenVR::renderStereoTargets()
 	// Right Eye
 	glBindFramebuffer(GL_FRAMEBUFFER, rightEyeDesc._nRenderFramebufferId);
 	glViewport(0, 0, _nRenderWidth, _nRenderHeight);
+	
 	renderScene(vr::Eye_Right);
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDisable(GL_MULTISAMPLE);
