@@ -261,5 +261,4 @@ protected:
 	CGLRenderModel *_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 
 	ofShader contrast_shader_;	//shader used in draw_using_contrast_shader
-	void create_contrast_shader();
 };

@@ -42,8 +42,8 @@ void ofxOpenVR::setup(std::function< void(vr::Hmd_Eye) > f)
 	_iTrackedControllerCount_Last = -1;
 	_iValidPoseCount = 0;
 	_iValidPoseCount_Last = -1;
-	_bDrawControllers = false;
-	_bIsGridVisible = false;
+	_bDrawControllers = true;
+	_bIsGridVisible = true;
 	_clearColor.set(.08f, .08f, .08f, 1.0f);
 	_bRenderModelForTrackedDevices = false;
 
@@ -467,166 +467,13 @@ bool ofxOpenVR::initCompositor()
 //--------------------------------------------------------------
 bool ofxOpenVR::createAllShaders()
 {
-	//Contrast shader
-	create_contrast_shader();
-
-	// Controller transform shader
-	string vertex = "#version 410\n";
-	vertex += STRINGIFY(
-						uniform mat4 matrix;
-						layout(location = 0) in vec4 position;
-						layout(location = 1) in vec3 v3ColorIn;
-						out vec4 v4Color;
-						void main()
-						{
-							v4Color.xyz = v3ColorIn; v4Color.a = 1.0;
-							gl_Position = matrix * position;
-						}
-					);
-
-	string fragment = "#version 410\n";
-	fragment += STRINGIFY(
-						in vec4 v4Color;
-						out vec4 outputColor;
-						void main()
-						{
-							outputColor = v4Color;
-						}
-					);
-
-	_controllersTransformShader.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
-	_controllersTransformShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
-	_controllersTransformShader.bindDefaults();
-	_controllersTransformShader.linkProgram();
-
-	// Lens shader - render distortion
-	vertex = "#version 410\n";
-	vertex += STRINGIFY(
-						layout(location = 0) in vec4 position;
-						layout(location = 1) in vec2 v2UVredIn;
-						layout(location = 2) in vec2 v2UVGreenIn;
-						layout(location = 3) in vec2 v2UVblueIn;
-						noperspective  out vec2 v2UVred;
-						noperspective  out vec2 v2UVgreen;
-						noperspective  out vec2 v2UVblue;
-						void main()
-						{
-							v2UVred = v2UVredIn;
-							v2UVgreen = v2UVGreenIn;
-							v2UVblue = v2UVblueIn;
-							gl_Position = position;
-						}
-					);
-
-	fragment = "#version 410\n";
-	fragment += STRINGIFY(
-						uniform sampler2D mytexture;
-
-						noperspective  in vec2 v2UVred;
-						noperspective  in vec2 v2UVgreen;
-						noperspective  in vec2 v2UVblue;
-
-						out vec4 outputColor;
-
-						void main()
-						{
-							float fBoundsCheck = ((dot(vec2(lessThan(v2UVgreen.xy, vec2(0.05, 0.05))), vec2(1.0, 1.0)) + dot(vec2(greaterThan(v2UVgreen.xy, vec2(0.95, 0.95))), vec2(1.0, 1.0))));
-							if (fBoundsCheck > 1.0)
-							{
-								outputColor = vec4(0, 0, 0, 1.0);
-							}
-							else
-							{
-								float red = texture(mytexture, v2UVred).x;
-								float green = texture(mytexture, v2UVgreen).y;
-								float blue = texture(mytexture, v2UVblue).z;
-								outputColor = vec4(red, green, blue, 1.0);
-							}
-						}
-					);
-
-	_lensShader.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
-	_lensShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
-	_lensShader.bindDefaults();
-	_lensShader.linkProgram();
-
-	// Render models
-	vertex = "#version 410\n";
-	vertex += STRINGIFY(
-						uniform mat4 matrix;
-						layout(location = 0) in vec4 position;
-						layout(location = 1) in vec3 v3NormalIn;
-						layout(location = 2) in vec2 v2TexCoordsIn;
-						out vec2 v2TexCoord;
-						void main()
-						{
-							v2TexCoord = v2TexCoordsIn;
-							gl_Position = matrix * vec4(position.xyz, 1);
-						}
-					);
-
-	fragment = "#version 410\n";
-	fragment += STRINGIFY(
-							uniform sampler2D diffuse;
-							in vec2 v2TexCoord;
-							out vec4 outputColor;
-							void main()
-							{
-							   outputColor = texture( diffuse, v2TexCoord);
-							}
-						);
-
-	_renderModelsShader.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
-	_renderModelsShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
-	_renderModelsShader.bindDefaults();
-	_renderModelsShader.linkProgram();
+	const std::string shaderPath("../../../../../addons/ofxOpenVR/shader/");
+	_controllersTransformShader.load(shaderPath + "controllerTransform");
+	_lensShader.load(shaderPath + "lens");
+	_renderModelsShader.load(shaderPath + "renderModel");
+	contrast_shader_.load(shaderPath + "contrast");
 
 	return true;
-}
-
-//--------------------------------------------------------------
-void ofxOpenVR::create_contrast_shader() {
-	// Contrast shader, used in draw_using_contrast_shader
-	string vertex = "#version 410\n";
-	vertex += STRINGIFY(
-		uniform mat4 modelViewProjectionMatrix;
-	in vec4 position;
-	in vec2 texcoord;
-	out vec2 texCoordVarying;
-
-	void main()
-	{
-		texCoordVarying = texcoord;
-		gl_Position = modelViewProjectionMatrix * position;
-	}
-	);
-
-	string fragment = "#version 410\n";
-	fragment += STRINGIFY(
-		uniform sampler2D tex0;
-	uniform float contrast0 = 0.2;
-	uniform float contrast1 = 0.6;
-	in vec2 texCoordVarying;
-	out vec4 outputColor;
-
-	float mapf(float x, float a, float b, float A, float B) {
-		return (x - a) / (b - a)*(B - A) + A;
-	}
-
-	void main()
-	{
-		outputColor = texture(tex0, texCoordVarying);
-		float br = (outputColor.r + outputColor.g + outputColor.b) / 3;
-		//float br1 = pow(br,0.25);
-		float br1 = mapf(br, contrast0, contrast1, 0, 1);
-		outputColor *= br1 / br;
-	}
-	);
-
-	contrast_shader_.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
-	contrast_shader_.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
-	contrast_shader_.bindDefaults();
-	contrast_shader_.linkProgram();
 }
 
 
