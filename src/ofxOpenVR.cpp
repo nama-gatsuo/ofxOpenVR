@@ -1240,9 +1240,9 @@ ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,
 void ofxOpenVR::drawControllers()
 {
 	// Don't draw controllers if somebody else has input focus
-	if (_pHMD->IsInputFocusCapturedByAnotherProcess()) {
+	/*if (_pHMD->IsInputFocusCapturedByAnotherProcess()) {
 		return;
-	}
+	}*/
 		
 	_controllersVbo.clear();
 	
@@ -1295,9 +1295,9 @@ void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 	glEnable(GL_DEPTH_TEST);
 
 	// Don't continue if somebody else has input focus
-	if (_pHMD->IsInputFocusCapturedByAnotherProcess()) {
+	/*if (_pHMD->IsInputFocusCapturedByAnotherProcess()) {
 		return;
-	}
+	}*/
 
 	// Draw the controllers
 	if (_bDrawControllers) {
@@ -1321,9 +1321,9 @@ void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 				continue;
 			}
 				
-			if (_pHMD->IsInputFocusCapturedByAnotherProcess() && _pHMD->GetTrackedDeviceClass(unTrackedDevice) == vr::TrackedDeviceClass_Controller) {
+			/*if (_pHMD->IsInputFocusCapturedByAnotherProcess() && _pHMD->GetTrackedDeviceClass(unTrackedDevice) == vr::TrackedDeviceClass_Controller) {
 				continue;
-			}
+			}*/
 				
 			glm::mat4x4 matMVP = getCurrentViewProjectionMatrix(nEye) * _rmat4DevicePose[unTrackedDevice];
 
