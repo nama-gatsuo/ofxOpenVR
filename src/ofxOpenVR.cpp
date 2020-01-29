@@ -79,17 +79,8 @@ void ofxOpenVR::exit()
 		glDeleteBuffers(1, &_glIDVertBuffer);
 		glDeleteBuffers(1, &_glIDIndexBuffer);
 
-		glDeleteRenderbuffers(1, &leftEyeDesc._nDepthBufferId);
-		glDeleteTextures(1, &leftEyeDesc._nRenderTextureId);
-		glDeleteFramebuffers(1, &leftEyeDesc._nRenderFramebufferId);
-		glDeleteTextures(1, &leftEyeDesc._nResolveTextureId);
-		glDeleteFramebuffers(1, &leftEyeDesc._nResolveFramebufferId);
-
-		glDeleteRenderbuffers(1, &rightEyeDesc._nDepthBufferId);
-		glDeleteTextures(1, &rightEyeDesc._nRenderTextureId);
-		glDeleteFramebuffers(1, &rightEyeDesc._nRenderFramebufferId);
-		glDeleteTextures(1, &rightEyeDesc._nResolveTextureId);
-		glDeleteFramebuffers(1, &rightEyeDesc._nResolveFramebufferId);
+		eyeFbo[vr::Eye_Left].clear();
+		eyeFbo[vr::Eye_Right].clear();
 
 		if (_unLensVAO != 0)
 		{
@@ -140,7 +131,7 @@ void ofxOpenVR::setFlipVr() {
 
 //--------------------------------------------------------------
 void ofxOpenVR::pushMatricesForRender(vr::Hmd_Eye nEye) {
-	setFlipVr();
+	//setFlipVr();
 
 	ofPushView();
 	ofSetMatrixMode(OF_MATRIX_PROJECTION);
@@ -165,9 +156,9 @@ void ofxOpenVR::render()
 	{
 		renderStereoTargets(); 
 
-		vr::Texture_t leftEyeTexture = { (void*)(uintptr_t)leftEyeDesc._nResolveTextureId, vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
+		vr::Texture_t leftEyeTexture = { (void*)(uintptr_t)(eyeFbo[vr::Eye_Left].getTexture().getTextureData().textureID), vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
 		vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
-		vr::Texture_t rightEyeTexture = { (void*)(uintptr_t)rightEyeDesc._nResolveTextureId, vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
+		vr::Texture_t rightEyeTexture = { (void*)(uintptr_t)(eyeFbo[vr::Eye_Right].getTexture().getTextureData().textureID), vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
 		vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 	}
 
@@ -181,7 +172,7 @@ glm::mat4x4 ofxOpenVR::getHMDMatrixProjectionEye(vr::Hmd_Eye nEye)
 	if (!_pHMD)
 		return glm::mat4x4();
 
-	vr::HmdMatrix44_t mat = _pHMD->GetProjectionMatrix(nEye, _fNearClip, _fFarClip);
+	vr::HmdMatrix44_t mat = _pHMD->GetProjectionMatrix(nEye, nearClip.get(), farClip.get());
 
 	return glm::mat4x4(
 		mat.m[0][0], mat.m[1][0], mat.m[2][0], mat.m[3][0],
@@ -194,8 +185,7 @@ glm::mat4x4 ofxOpenVR::getHMDMatrixProjectionEye(vr::Hmd_Eye nEye)
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getHMDMatrixPoseEye(vr::Hmd_Eye nEye)
 {
-	if (!_pHMD)
-		return glm::mat4x4();
+	if (!_pHMD) return glm::mat4x4();
 
 	vr::HmdMatrix34_t matEyeRight = _pHMD->GetEyeToHeadTransform(nEye);
 	glm::mat4x4 matrixObj(
@@ -211,49 +201,19 @@ glm::mat4x4 ofxOpenVR::getHMDMatrixPoseEye(vr::Hmd_Eye nEye)
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getCurrentViewProjectionMatrix(vr::Hmd_Eye nEye)
 {
-	glm::mat4x4 matMVP;
-	if (nEye == vr::Eye_Left)
-	{
-		matMVP = _mat4ProjectionLeft * _mat4eyePosLeft * _mat4HMDPose;
-	}
-	else if (nEye == vr::Eye_Right)
-	{
-		matMVP = _mat4ProjectionRight * _mat4eyePosRight *  _mat4HMDPose;
-	}
-
-	return matMVP;
+	return _mat4Projection[nEye] * _mat4eyePos[nEye] * _mat4HMDPose;
 }
 
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getCurrentProjectionMatrix(vr::Hmd_Eye nEye)
 {
-	glm::mat4x4 matP;
-	if (nEye == vr::Eye_Left)
-	{
-		matP = _mat4ProjectionLeft;
-	}
-	else if (nEye == vr::Eye_Right)
-	{
-		matP = _mat4ProjectionRight;
-	}
-
-	return matP;
+	return _mat4Projection[nEye];
 }
 
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getCurrentViewMatrix(vr::Hmd_Eye nEye)
 {
-	glm::mat4x4 matV;
-	if (nEye == vr::Eye_Left)
-	{
-		matV = _mat4eyePosLeft * _mat4HMDPose;
-	}
-	else if (nEye == vr::Eye_Right)
-	{
-		matV = _mat4eyePosRight *  _mat4HMDPose;
-	}
-
-	return matV;
+	return _mat4eyePos[nEye] * _mat4HMDPose;
 }
 
 
@@ -318,7 +278,7 @@ float ofxOpenVR::getTriggerState(int controller) {
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getTrackPadState(int controller) {
+glm::vec3 ofxOpenVR::getTrackPadState(int controller) {
 	if (!_pHMD) return ofPoint();
 	int id = (controller == 0) ? _leftControllerDeviceID : _rightControllerDeviceID;
 	if (_pHMD->IsTrackedDeviceConnected(id)) {
@@ -327,11 +287,11 @@ ofPoint ofxOpenVR::getTrackPadState(int controller) {
 		if (res) {
 			bool touched = state.ulButtonTouched & 4294967296;  //this constant is 2^vk::k_EButton_SteamVR_Touchpad
 			//cout << state.ulButtonTouched << endl;
-			if (touched) return ofPoint(state.rAxis[0].x, state.rAxis[0].y);
-			else return ofPoint(-1000, -1000, 0);
+			if (touched) return glm::vec3(state.rAxis[0].x, state.rAxis[0].y, 0);
+			else return glm::vec3(-1000, -1000, 0);
 		}
 	}
-	return ofPoint();
+	return glm::vec3();
 }
 
 
@@ -452,8 +412,9 @@ bool ofxOpenVR::init()
 	_strTrackingSystemName = getTrackedDeviceString(_pHMD, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String);
 	_strTrackingSystemModelNumber = getTrackedDeviceString(_pHMD, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_ModelNumber_String);
 
-	_fNearClip = 0.1f;
-	_fFarClip = 30.0f;
+	// TODO: parameterize!
+	nearClip = 0.1f;
+	farClip = 30.0f;
 
 	_bIsGLInit = initGL();
 	if (!_bIsGLInit)
@@ -670,41 +631,12 @@ void ofxOpenVR::create_contrast_shader() {
 
 
 //--------------------------------------------------------------
-bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc)
+bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, vr::Hmd_Eye eye)
 {
 	// Still using direct OpenGL calls to create the FBO as OF does not allow the create of GL_TEXTURE_2D_MULTISAMPLE texture.
-	
-	glGenFramebuffers(1, &framebufferDesc._nRenderFramebufferId);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc._nRenderFramebufferId);
-
-	glGenRenderbuffers(1, &framebufferDesc._nDepthBufferId);
-	glBindRenderbuffer(GL_RENDERBUFFER, framebufferDesc._nDepthBufferId);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH_COMPONENT, nWidth, nHeight);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebufferDesc._nDepthBufferId);
-
-	glGenTextures(1, &framebufferDesc._nRenderTextureId);
-	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, framebufferDesc._nRenderTextureId);
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA8, nWidth, nHeight, true);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, framebufferDesc._nRenderTextureId, 0);
-
-	glGenFramebuffers(1, &framebufferDesc._nResolveFramebufferId);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc._nResolveFramebufferId);
-
-	glGenTextures(1, &framebufferDesc._nResolveTextureId);
-	glBindTexture(GL_TEXTURE_2D, framebufferDesc._nResolveTextureId);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, nWidth, nHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferDesc._nResolveTextureId, 0);
-
-	// check FBO status
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (status != GL_FRAMEBUFFER_COMPLETE)
-	{
-		return false;
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	ofDisableArbTex();
+	eyeFbo[eye].allocate(nWidth, nHeight, GL_RGBA);
+	ofEnableArbTex();
 
 	return true;
 }
@@ -712,15 +644,14 @@ bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, FramebufferDesc &fram
 //--------------------------------------------------------------
 bool ofxOpenVR::setupStereoRenderTargets()
 {
-	if (!_pHMD)
-		return false;
+	if (!_pHMD) return false;
 
 	_pHMD->GetRecommendedRenderTargetSize(&_nRenderWidth, &_nRenderHeight);
 
-	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, leftEyeDesc))
+	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Left))
 		return false;
 
-	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, rightEyeDesc))
+	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Right))
 		return false;
 
 	return true;
@@ -862,17 +793,16 @@ void ofxOpenVR::setupDistortion()
 //--------------------------------------------------------------
 void ofxOpenVR::setupCameras()
 {
-	_mat4ProjectionLeft = getHMDMatrixProjectionEye(vr::Eye_Left);
-	_mat4ProjectionRight = getHMDMatrixProjectionEye(vr::Eye_Right);
-	_mat4eyePosLeft = getHMDMatrixPoseEye(vr::Eye_Left);
-	_mat4eyePosRight = getHMDMatrixPoseEye(vr::Eye_Right);
+	_mat4Projection[vr::Eye_Left] = getHMDMatrixProjectionEye(vr::Eye_Left);
+	_mat4Projection[vr::Eye_Right] = getHMDMatrixProjectionEye(vr::Eye_Right);
+	_mat4eyePos[vr::Eye_Left] = getHMDMatrixPoseEye(vr::Eye_Left);
+	_mat4eyePos[vr::Eye_Right] = getHMDMatrixPoseEye(vr::Eye_Right);
 }
 
 //--------------------------------------------------------------
 void ofxOpenVR::updateDevicesMatrixPose()
 {
-	if (!_pHMD)
-		return;
+	if (!_pHMD) return;
 	
 	// Reset some vars.
 	_iValidPoseCount = 0;
@@ -1136,66 +1066,35 @@ void ofxOpenVR::processVREvent(const vr::VREvent_t & event)
 //--------------------------------------------------------------
 void ofxOpenVR::renderStereoTargets()
 {
-	glClearColor(_clearColor.r, _clearColor.g, _clearColor.b, _clearColor.a);
-	glEnable(GL_MULTISAMPLE);
+	
+	//glEnable(GL_MULTISAMPLE);
 
 	// Left Eye
-	glBindFramebuffer(GL_FRAMEBUFFER, leftEyeDesc._nRenderFramebufferId);
-	glViewport(0, 0, _nRenderWidth, _nRenderHeight);
+	eyeFbo[vr::Eye_Left].begin();
+	ofClear(_clearColor);
 	renderScene(vr::Eye_Left);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glDisable(GL_MULTISAMPLE);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, leftEyeDesc._nRenderFramebufferId);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, leftEyeDesc._nResolveFramebufferId);
-
-	glBlitFramebuffer(0, 0, _nRenderWidth, _nRenderHeight, 0, 0, _nRenderWidth, _nRenderHeight,
-		GL_COLOR_BUFFER_BIT,
-		GL_LINEAR);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-
-	glEnable(GL_MULTISAMPLE);
+	eyeFbo[vr::Eye_Left].end();
 
 	// Right Eye
-	glBindFramebuffer(GL_FRAMEBUFFER, rightEyeDesc._nRenderFramebufferId);
-	glViewport(0, 0, _nRenderWidth, _nRenderHeight);
-	
+	eyeFbo[vr::Eye_Right].begin();
+	ofClear(_clearColor);
 	renderScene(vr::Eye_Right);
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glDisable(GL_MULTISAMPLE);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, rightEyeDesc._nRenderFramebufferId);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightEyeDesc._nResolveFramebufferId);
-
-	glBlitFramebuffer(0, 0, _nRenderWidth, _nRenderHeight, 0, 0, _nRenderWidth, _nRenderHeight,
-		GL_COLOR_BUFFER_BIT,
-		GL_LINEAR);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	eyeFbo[vr::Eye_Right].end();
 }
 
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::get_center(const glm::mat4x4 &pose) {
-	return ofPoint(pose * glm::vec4(0, 0, 0, 1));
+glm::vec3 ofxOpenVR::get_center(const glm::mat4x4& pose) {
+	return glm::vec3(pose * glm::vec4(0, 0, 0, 1));
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::get_axe(const glm::mat4x4 &pose, int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
+glm::vec3 ofxOpenVR::get_axe(const glm::mat4x4 &pose, int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
 	glm::vec4 center(0, 0, 0, 1);
 	glm::vec4 point = center;
 	point[axe] += 0.05f;
 	point = pose * point - pose * center;
-	ofPoint v(point);
-	v.normalize();
-	return v;
+	return glm::normalize(glm::vec3(point));
 }
 
 //--------------------------------------------------------------
@@ -1204,22 +1103,22 @@ glm::mat4x4 ofxOpenVR::getHDMPose() {
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getHDMCenter() {
+glm::vec3 ofxOpenVR::getHDMCenter() {
 	return get_center(getHDMPose());
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getHDMAxe(int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
+glm::vec3 ofxOpenVR::getHDMAxe(int axe) {	//axe 0,1,2 - OX,OY,OZ result is normalized
 	return get_axe(getHDMPose(), axe);
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getControllerCenter(int controller) {
+glm::vec3 ofxOpenVR::getControllerCenter(int controller) {
 	return get_center(getControllerPose(controller));
 }
 
 //--------------------------------------------------------------
-ofPoint ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,OY,OZ, result is normalized
+glm::vec3 ofxOpenVR::getControllerAxe(int controller, int axe) {	//axe 0,1,2 - OX,OY,OZ, result is normalized
 	return get_axe(getControllerPose(controller), axe);
 }
 
@@ -1375,7 +1274,7 @@ void ofxOpenVR::draw_using_binded_shader(float w, float h, int eye) {
 	mesh.addTriangle(0, 1, 2);
 	mesh.addTriangle(0, 2, 3);
 
-	GLuint texture_id = (eye == vr::Eye_Left) ? leftEyeDesc._nResolveTextureId : rightEyeDesc._nResolveTextureId;
+	GLuint texture_id = eyeFbo[eye].getTexture().getTextureData().textureID;
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1398,20 +1297,14 @@ void ofxOpenVR::renderDistortion()
 	_lensShader.begin();
 
 	//render left lens (first half of index array )
-	glBindTexture(GL_TEXTURE_2D, leftEyeDesc._nResolveTextureId);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	eyeFbo[vr::Eye_Left].getTexture().bind();
 	glDrawElements(GL_TRIANGLES, _uiIndexSize / 2, GL_UNSIGNED_SHORT, 0);
+	eyeFbo[vr::Eye_Left].getTexture().unbind();
 
 	//render right lens (second half of index array )
-	glBindTexture(GL_TEXTURE_2D, rightEyeDesc._nResolveTextureId);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	eyeFbo[vr::Eye_Right].getTexture().bind();
 	glDrawElements(GL_TRIANGLES, _uiIndexSize / 2, GL_UNSIGNED_SHORT, (const void *)(_uiIndexSize));
+	eyeFbo[vr::Eye_Right].getTexture().unbind();
 
 	glBindVertexArray(0);
 	_lensShader.end();

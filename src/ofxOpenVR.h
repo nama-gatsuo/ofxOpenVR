@@ -111,8 +111,8 @@ public:
 
 	//HMD
 	glm::mat4x4 getHDMPose();
-	ofPoint getHDMCenter();
-	ofPoint getHDMAxe(int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+	glm::vec3 getHDMCenter();
+	glm::vec3 getHDMAxe(int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 	
 	glm::mat4x4 getHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
 	glm::mat4x4 getHMDMatrixPoseEye(vr::Hmd_Eye nEye);
@@ -137,10 +137,10 @@ public:
 	void setDrawControllers(bool bDrawControllers);
 
 	glm::mat4x4 getControllerPose(int controller);	//controller 0 - left, 1 - right
-	ofPoint getControllerCenter(int controller);
-	ofPoint getControllerAxe(int controller, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+	glm::vec3 getControllerCenter(int controller);
+	glm::vec3 getControllerAxe(int controller, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 	float getTriggerState(int controller);	//0..1
-	ofPoint getTrackPadState(int controller); //if touched[-1..1]x[-1..1], else (-1000,-1000). 
+	glm::vec3 getTrackPadState(int controller); //if touched[-1..1]x[-1..1], else (-1000,-1000). 
 	//Note, at the touch start, there are 2-3 frames this function returns values near to (0,0).
 
 	//Controllers events. Note: the queue of events is cleared at each update call.
@@ -153,8 +153,8 @@ public:
 	int toDeviceId(int controller);
 
 	//---- Get center and axes from a matrix
-	static ofPoint get_center(const glm::mat4x4 &pose);
-	static ofPoint get_axe(const glm::mat4x4 &pose, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
+	static glm::vec3 get_center(const glm::mat4x4& pose);
+	static glm::vec3 get_axe(const glm::mat4x4& pose, int axe);	//axe 0,1,2 - OX,OY,OZ result is normalized
 
 	//Size of rendering port for each eye
 	int render_width() { return _nRenderWidth; }
@@ -180,16 +180,7 @@ protected:
 		glm::vec2 texCoordBlue;
 	};
 
-	struct FramebufferDesc
-	{
-		GLuint _nDepthBufferId;
-		GLuint _nRenderTextureId;
-		GLuint _nRenderFramebufferId;
-		GLuint _nResolveTextureId;
-		GLuint _nResolveFramebufferId;
-	};
-	FramebufferDesc leftEyeDesc;
-	FramebufferDesc rightEyeDesc;
+	std::array<ofFbo, 2> eyeFbo;
 
 	std::function< void(vr::Hmd_Eye) > _callableRenderFunction;
 
@@ -197,13 +188,10 @@ protected:
 	bool _bIsGridVisible;
 	
 	ofFloatColor _clearColor;
+	uint32_t _nRenderWidth, _nRenderHeight;
 
-	uint32_t _nRenderWidth;
-	uint32_t _nRenderHeight;
-
-	float _fNearClip;
-	float _fFarClip;
-
+	ofParameter<float> nearClip, farClip;
+	
 	vr::IVRSystem *_pHMD;
 
 	vr::IVRRenderModels *_pRenderModels;
@@ -228,12 +216,10 @@ protected:
 	glm::mat4x4 _mat4HMDPose_world;	//for using this pose in world rendering
 
 	glm::mat4x4 _mat4HMDPose;
-	glm::mat4x4 _mat4eyePosLeft;
-	glm::mat4x4 _mat4eyePosRight;
+	std::array<glm::mat4, 2> _mat4eyePos;
 
 	glm::mat4x4 _mat4ProjectionCenter;
-	glm::mat4x4 _mat4ProjectionLeft;
-	glm::mat4x4 _mat4ProjectionRight;
+	std::array<glm::mat4, 2> _mat4Projection;
 
 	int _leftControllerDeviceID;
 	int _rightControllerDeviceID;
@@ -249,7 +235,7 @@ protected:
 	bool initCompositor();
 
 	bool createAllShaders();
-	bool createFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc);
+	bool createFrameBuffer(int nWidth, int nHeight, vr::Hmd_Eye eye);
 
 	bool setupStereoRenderTargets();
 	void setupDistortion();
