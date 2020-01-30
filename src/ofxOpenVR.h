@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include <openvr.h>
 #include "CGLRenderModel.h"
+#include "PingPongBuffer.h"
 
 /*
 ofxOpenVR addon, adopted by Kuflex, 2017
@@ -16,7 +17,6 @@ ofxOpenVR addon, adopted by Kuflex, 2017
 	cout << "trackpad " << p0.x << ", " << p0.y << "   " << p1.x << ", " << p1.y << endl;
 
 - Added ofxOpenVRPanoramic module for 360 panorama environment rendering, see ofxOpenVRPanoramic.h for details
-
 */
 
 //--------------------------------------------------------------
@@ -81,11 +81,7 @@ public:
 
 	//This function restores matrices after rendering. 
 	//Note: Also it resets orientation mode by calling setFlipOf()
-	void popMatricesForRender(); 
-
-	void setFlipVr();		//just calls ofSetOrientation(OF_ORIENTATION_DEFAULT,true)
-	void setFlipOf();		//just calls ofSetOrientation(OF_ORIENTATION_DEFAULT,false)
-
+	void popMatricesForRender();
 
 	//---- rendering the whole scene
 	void render();				//This is the MAIN rendering function to draw into HDM, you may call call it in update()
@@ -99,8 +95,6 @@ public:
 	//NOTE: currently size of rendering texture is limited render_width,render_heigth (SOME BUG)
 	void draw_using_contrast_shader(float w, float h, float contrast0 = 0, float contrast1 = 1, int eye = vr::Eye_Left);
 	void draw_using_binded_shader(float w, float h, int eye = vr::Eye_Left);	//for custom shader drawing, see create_contrast_shader() for example
-
-
 
 	void setRenderModelForTrackedDevices(bool bRender);		
 	bool getRenderModelForTrackedDevices();
@@ -160,7 +154,9 @@ public:
 	int render_width() { return _nRenderWidth; }
 	int render_height() { return _nRenderHeight; }
 
-
+	const ofTexture& getCameraTexture() const {
+		return cameraImg.getTexture();
+	}
 
 protected:
 	vector<ofxOpenVRControllerEvent> controller_events_;
@@ -193,6 +189,20 @@ protected:
 	ofParameter<float> nearClip, farClip;
 	
 	vr::IVRSystem *_pHMD;
+	
+	bool startVideo();
+	void closeVideo();
+
+	vr::IVRTrackedCamera * trackedCamera;
+	vr::TrackedCameraHandle_t trackedCameraHandle;
+	uint32_t m_nCameraFrameWidth;
+	uint32_t m_nCameraFrameHeight;
+	uint32_t m_nCameraFrameBufferSize;
+	uint8_t * m_pCameraFrameBuffer;
+	uint32_t m_nLastFrameSequence;
+	int frameCounter;
+	ofImage cameraImg;
+	std::array<ofFbo, 2> camFbo;
 
 	vr::IVRRenderModels *_pRenderModels;
 	std::string _strTrackingSystemName;

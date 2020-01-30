@@ -33,8 +33,17 @@ void ofxOpenVR::setup(std::function< void(vr::Hmd_Eye) > f)
 
 	// Initialize vars
 	_bIsGLInit = false;
-	_pHMD = NULL;
-	_pRenderModels = NULL;
+	_pHMD = nullptr;
+
+	trackedCamera = nullptr;
+	trackedCameraHandle = INVALID_TRACKED_CAMERA_HANDLE;
+	m_nCameraFrameWidth = 0;
+	m_nCameraFrameHeight = 0;
+	m_nCameraFrameBufferSize = 0;
+	m_pCameraFrameBuffer = nullptr;
+	frameCounter = 0;
+
+	_pRenderModels = nullptr;
 	_unLensVAO = 0;
 	_iTrackedControllerCount = 0;
 	_leftControllerDeviceID = -1;
@@ -56,6 +65,10 @@ void ofxOpenVR::setup(std::function< void(vr::Hmd_Eye) > f)
 //--------------------------------------------------------------
 void ofxOpenVR::exit()
 {
+
+	closeVideo();
+	trackedCamera = nullptr;
+
 	if (vr::VRCompositor()->IsMirrorWindowVisible()) {
 		hideMirrorWindow();
 	}
@@ -63,7 +76,7 @@ void ofxOpenVR::exit()
 	if (_pHMD)
 	{
 		vr::VR_Shutdown();
-		_pHMD = NULL;
+		_pHMD = nullptr;
 	}
 
 	for (std::vector< CGLRenderModel * >::iterator i = _vecRenderModels.begin(); i != _vecRenderModels.end(); i++)
@@ -71,6 +84,8 @@ void ofxOpenVR::exit()
 		delete (*i);
 	}
 	_vecRenderModels.clear();
+
+	
 
 	if (_bIsGLInit)
 	{
@@ -95,7 +110,6 @@ void ofxOpenVR::exit()
 	
 }
 
-
 //--------------------------------------------------------------
 void ofxOpenVR::update()
 {
@@ -117,16 +131,46 @@ void ofxOpenVR::update()
 	}
 
 	updateDevicesMatrixPose();
-}
 
-//--------------------------------------------------------------
-void ofxOpenVR::setFlipOf() {
-	ofSetOrientation(OF_ORIENTATION_DEFAULT, true);
-}
+	frameCounter++;
+	if (true) {
 
-//--------------------------------------------------------------
-void ofxOpenVR::setFlipVr() {
-	ofSetOrientation(OF_ORIENTATION_DEFAULT, false);
+		frameCounter = 0;
+
+		vr::CameraVideoStreamFrameHeader_t frameHeader;
+		vr::EVRTrackedCameraError nCameraError = trackedCamera->GetVideoStreamFrameBuffer(trackedCameraHandle, vr::VRTrackedCameraFrameType_Undistorted, nullptr, 0, &frameHeader, sizeof(frameHeader));
+		if (nCameraError != vr::VRTrackedCameraError_None) return;
+		if (frameHeader.nFrameSequence == m_nLastFrameSequence) {
+			// frame hasn't changed yet, nothing to do
+			return;
+		}
+
+		// Frame has changed, do the more expensive frame buffer copy
+		nCameraError = trackedCamera->GetVideoStreamFrameBuffer(trackedCameraHandle, vr::VRTrackedCameraFrameType_Undistorted, m_pCameraFrameBuffer, m_nCameraFrameBufferSize, &frameHeader, sizeof(frameHeader));
+		if (nCameraError != vr::VRTrackedCameraError_None)
+			return;
+
+		m_nLastFrameSequence = frameHeader.nFrameSequence;
+
+		cameraImg.setFromPixels(m_pCameraFrameBuffer, m_nCameraFrameWidth, m_nCameraFrameHeight, OF_IMAGE_COLOR_ALPHA);
+
+		camFbo[vr::Eye_Left].begin();
+		ofPushMatrix();
+		ofScale(1, -1, 1);
+		ofTranslate(0, -(int)m_nCameraFrameHeight, 0);
+		cameraImg.draw(0, 0);
+		ofPopMatrix();
+		camFbo[vr::Eye_Left].end();
+
+		camFbo[vr::Eye_Right].begin();
+		ofPushMatrix();
+		ofScale(1, -1, 1);
+		ofTranslate(0, -(int)m_nCameraFrameHeight * 0.5, 0);
+		cameraImg.draw(0, 0);
+		ofPopMatrix();
+		camFbo[vr::Eye_Right].end();
+
+	}
 }
 
 //--------------------------------------------------------------
@@ -144,9 +188,8 @@ void ofxOpenVR::pushMatricesForRender(vr::Hmd_Eye nEye) {
 //--------------------------------------------------------------
 void ofxOpenVR::popMatricesForRender() {
 	ofPopView();
-	setFlipOf();
+	ofSetOrientation(OF_ORIENTATION_DEFAULT, true);
 }
-
 
 //--------------------------------------------------------------
 void ofxOpenVR::render()
@@ -162,7 +205,6 @@ void ofxOpenVR::render()
 		vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 	}
 
-	glDisable(GL_DEPTH_TEST);
 	glViewport(0, 0, ofGetWidth(), ofGetHeight());
 }
 
@@ -215,7 +257,6 @@ glm::mat4x4 ofxOpenVR::getCurrentViewMatrix(vr::Hmd_Eye nEye)
 {
 	return _mat4eyePos[nEye] * _mat4HMDPose;
 }
-
 
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::getControllerPose(int controller)
@@ -406,6 +447,7 @@ bool ofxOpenVR::init()
 		sprintf_s(buf, sizeof(buf), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
 		return false;
 	}
+
 	_strTrackingSystemName = "No Driver";
 	_strTrackingSystemModelNumber = "No Display";
 
@@ -429,15 +471,42 @@ bool ofxOpenVR::init()
 		return false;
 	}
 
+	// Init tracked camera
+	trackedCamera = vr::VRTrackedCamera();
+	
+	if (!trackedCamera) {
+		ofLogError() << "Unable to get Tracked Camera interface.";
+		return false;
+	}
+
+	bool bHasCamera = false;
+	vr::EVRTrackedCameraError nCameraError = trackedCamera->HasCamera(vr::k_unTrackedDeviceIndex_Hmd, &bHasCamera);
+	
+
+
+	if (nCameraError != vr::VRTrackedCameraError_None || !bHasCamera) {
+		ofLogError() << "No Tracked Camera Available! ( " << trackedCamera->GetCameraErrorNameFromEnum(nCameraError) << ")";
+		return false;
+	}
+
+	vr::ETrackedPropertyError propertyError;
+	char buffer[128];
+	_pHMD->GetStringTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_CameraFirmwareDescription_String, buffer, sizeof(buffer), &propertyError);
+	if (propertyError != vr::TrackedProp_Success) {
+		ofLogError() << "Failed to get tracked camera firmware description!\n";
+		return false;
+	}
+
+	ofLogNotice() << "Camera Firmware: " << buffer;
+	if (bHasCamera) startVideo();
+
 	return true;
 }
 
 //--------------------------------------------------------------
 bool ofxOpenVR::initGL()
 {
-	if (!createAllShaders())
-		return false;
-
+	createAllShaders();
 	setupCameras();
 
 	if (!setupStereoRenderTargets())
@@ -476,11 +545,9 @@ bool ofxOpenVR::createAllShaders()
 	return true;
 }
 
-
 //--------------------------------------------------------------
 bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, vr::Hmd_Eye eye)
 {
-	// Still using direct OpenGL calls to create the FBO as OF does not allow the create of GL_TEXTURE_2D_MULTISAMPLE texture.
 	ofDisableArbTex();
 	eyeFbo[eye].allocate(nWidth, nHeight, GL_RGBA);
 	ofEnableArbTex();
@@ -492,14 +559,12 @@ bool ofxOpenVR::createFrameBuffer(int nWidth, int nHeight, vr::Hmd_Eye eye)
 bool ofxOpenVR::setupStereoRenderTargets()
 {
 	if (!_pHMD) return false;
-
 	_pHMD->GetRecommendedRenderTargetSize(&_nRenderWidth, &_nRenderHeight);
 
-	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Left))
-		return false;
+	ofLogNotice() << "render size (per eye): " << _nRenderWidth << " x " << _nRenderHeight;
 
-	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Right))
-		return false;
+	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Left)) return false;
+	if (!createFrameBuffer(_nRenderWidth, _nRenderHeight, vr::Eye_Right)) return false;
 
 	return true;
 }
@@ -915,17 +980,40 @@ void ofxOpenVR::renderStereoTargets()
 {
 	
 	//glEnable(GL_MULTISAMPLE);
+	bool b = cameraImg.isAllocated();
+	float camScale = 1.8;
 
 	// Left Eye
 	eyeFbo[vr::Eye_Left].begin();
 	ofClear(_clearColor);
+	ofEnableAlphaBlending();
+	if (b) {
+		ofPushMatrix();
+		ofTranslate(eyeFbo[vr::Eye_Left].getWidth()/2, eyeFbo[vr::Eye_Left].getHeight()/2);
+		ofScale(camScale);
+		ofTranslate(- camFbo[vr::Eye_Left].getWidth()/2, -camFbo[vr::Eye_Left].getHeight()/2);
+		camFbo[vr::Eye_Left].draw(0, 0);
+		ofPopMatrix();
+	}
+	
 	renderScene(vr::Eye_Left);
+	ofDisableAlphaBlending();
 	eyeFbo[vr::Eye_Left].end();
 
 	// Right Eye
 	eyeFbo[vr::Eye_Right].begin();
 	ofClear(_clearColor);
+	ofEnableAlphaBlending();
+	if (b) {
+		ofPushMatrix();
+		ofTranslate(eyeFbo[vr::Eye_Right].getWidth() / 2, eyeFbo[vr::Eye_Right].getHeight() / 2);
+		ofScale(camScale);
+		ofTranslate(-camFbo[vr::Eye_Right].getWidth() / 2, -camFbo[vr::Eye_Right].getHeight() / 2);
+		camFbo[vr::Eye_Right].draw(0, 0);
+		ofPopMatrix();
+	}
 	renderScene(vr::Eye_Right);
+	ofDisableAlphaBlending();
 	eyeFbo[vr::Eye_Right].end();
 }
 
@@ -942,6 +1030,49 @@ glm::vec3 ofxOpenVR::get_axe(const glm::mat4x4 &pose, int axe) {	//axe 0,1,2 - O
 	point[axe] += 0.05f;
 	point = pose * point - pose * center;
 	return glm::normalize(glm::vec3(point));
+}
+
+bool ofxOpenVR::startVideo() {
+	ofLogNotice() << "StartVideoPreview()";
+
+	// Allocate for camera frame buffer requirements
+	uint32_t nCameraFrameBufferSize = 0;
+	if (trackedCamera->GetCameraFrameSize(vr::k_unTrackedDeviceIndex_Hmd, vr::VRTrackedCameraFrameType_Undistorted, 
+		&m_nCameraFrameWidth,
+		&m_nCameraFrameHeight,
+		&nCameraFrameBufferSize
+	) != vr::VRTrackedCameraError_None) {
+		ofLogError() << "GetCameraFrameBounds() Failed!";
+		return false;
+	}
+	ofLogNotice() << "camera input size: " << m_nCameraFrameWidth << " x " << m_nCameraFrameHeight;
+
+	if (nCameraFrameBufferSize && nCameraFrameBufferSize != m_nCameraFrameBufferSize) {
+		delete[] m_pCameraFrameBuffer;
+		m_nCameraFrameBufferSize = nCameraFrameBufferSize;
+		m_pCameraFrameBuffer = new uint8_t[m_nCameraFrameBufferSize];
+		memset(m_pCameraFrameBuffer, 0, m_nCameraFrameBufferSize);
+	}
+
+	m_nLastFrameSequence = 0;
+
+	trackedCamera->AcquireVideoStreamingService(vr::k_unTrackedDeviceIndex_Hmd, &trackedCameraHandle);
+	if (trackedCameraHandle == INVALID_TRACKED_CAMERA_HANDLE) {
+		ofLogError() << "AcquireVideoStreamingService() Failed!";
+		return false;
+	}
+
+	camFbo[vr::Eye_Left].allocate(m_nCameraFrameWidth, m_nCameraFrameHeight/2, GL_RGB);
+	camFbo[vr::Eye_Right].allocate(m_nCameraFrameWidth, m_nCameraFrameHeight/2, GL_RGB);
+
+	return true;
+}
+
+void ofxOpenVR::closeVideo() {
+	ofLogNotice() << "StopVideoPreview()";
+
+	trackedCamera->ReleaseVideoStreamingService(trackedCameraHandle);
+	trackedCameraHandle = INVALID_TRACKED_CAMERA_HANDLE;
 }
 
 //--------------------------------------------------------------
@@ -1026,8 +1157,8 @@ void ofxOpenVR::drawControllers()
 //--------------------------------------------------------------
 void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
+	
+	ofEnableDepthTest();
 
 	// Don't continue if somebody else has input focus
 	/*if (_pHMD->IsInputFocusCapturedByAnotherProcess()) {
@@ -1071,6 +1202,9 @@ void ofxOpenVR::renderScene(vr::Hmd_Eye nEye)
 
 	// User's render function
 	_callableRenderFunction(nEye);
+
+	ofDisableDepthTest();
+
 }
 
 //--------------------------------------------------------------
@@ -1170,13 +1304,12 @@ void ofxOpenVR::drawDebugInfo(float x, float y)
 //--------------------------------------------------------------
 glm::mat4x4 ofxOpenVR::convertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose)
 {
-	glm::mat4x4 matrixObj(
+	return glm::mat4x4(
 		matPose.m[0][0], matPose.m[1][0], matPose.m[2][0], 0.0,
 		matPose.m[0][1], matPose.m[1][1], matPose.m[2][1], 0.0,
 		matPose.m[0][2], matPose.m[1][2], matPose.m[2][2], 0.0,
 		matPose.m[0][3], matPose.m[1][3], matPose.m[2][3], 1.0f
-	);
-	return matrixObj;
+	);;
 }
 
 //--------------------------------------------------------------
