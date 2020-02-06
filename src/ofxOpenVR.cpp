@@ -27,7 +27,7 @@ std::string getTrackedDeviceString(vr::IVRSystem *pHmd, vr::TrackedDeviceIndex_t
 //--------------------------------------------------------------
 void ofxOpenVR::setup(std::function< void(vr::Hmd_Eye) > f)
 {
-	
+	isCameraShown = false;
 	// Store the user's callable render function 
 	_callableRenderFunction = f;
 
@@ -152,22 +152,31 @@ void ofxOpenVR::update()
 
 		m_nLastFrameSequence = frameHeader.nFrameSequence;
 
-		cameraImg.setFromPixels(m_pCameraFrameBuffer, m_nCameraFrameWidth, m_nCameraFrameHeight, OF_IMAGE_COLOR_ALPHA);
+		if (isCameraShown) {
+			cameraImg.setFromPixels(m_pCameraFrameBuffer, m_nCameraFrameWidth, m_nCameraFrameHeight, OF_IMAGE_COLOR_ALPHA);
+		}
+		
 
 		camFbo[vr::Eye_Left].begin();
-		ofPushMatrix();
-		ofScale(1, -1, 1);
-		ofTranslate(0, -(int)m_nCameraFrameHeight, 0);
-		cameraImg.draw(0, 0);
-		ofPopMatrix();
+		ofClear(0);
+		if (isCameraShown) {
+			ofPushMatrix();
+			ofScale(1, -1, 1);
+			ofTranslate(0, -(int)m_nCameraFrameHeight, 0);
+			cameraImg.draw(0, 0);
+			ofPopMatrix();
+		}
 		camFbo[vr::Eye_Left].end();
 
 		camFbo[vr::Eye_Right].begin();
-		ofPushMatrix();
-		ofScale(1, -1, 1);
-		ofTranslate(0, -(int)m_nCameraFrameHeight * 0.5, 0);
-		cameraImg.draw(0, 0);
-		ofPopMatrix();
+		ofClear(0);
+		if (isCameraShown) {
+			ofPushMatrix();
+			ofScale(1, -1, 1);
+			ofTranslate(0, -(int)m_nCameraFrameHeight * 0.5, 0);
+			cameraImg.draw(0, 0);
+			ofPopMatrix();
+		}
 		camFbo[vr::Eye_Right].end();
 
 	}

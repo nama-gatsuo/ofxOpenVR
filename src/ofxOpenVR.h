@@ -3,7 +3,6 @@
 #include "ofMain.h"
 #include <openvr.h>
 #include "CGLRenderModel.h"
-#include "PingPongBuffer.h"
 
 /*
 ofxOpenVR addon, adopted by Kuflex, 2017
@@ -120,6 +119,9 @@ public:
 	void hideMirrorWindow();
 	void toggleMirrorWindow();
 
+	void toggleCamera() {
+		isCameraShown = !isCameraShown;
+	}
 
 	void toggleGrid(float transitionDuration = 2.0f);
 	void showGrid(float transitionDuration = 2.0f);
@@ -271,4 +273,5 @@ protected:
 	CGLRenderModel *_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 
 	ofShader contrast_shader_;	//shader used in draw_using_contrast_shader
+	bool isCameraShown;
 };
